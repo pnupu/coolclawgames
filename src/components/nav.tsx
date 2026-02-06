@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 
 export function Nav() {
@@ -6,7 +7,7 @@ export function Nav() {
     <nav className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
         <Link href="/" className="flex items-center gap-2 text-lg font-bold tracking-tight">
-          <span className="text-[var(--claw-red)]">🦞</span>
+          <Image src="/logo-icon.png" alt="CoolClawGames" width={28} height={28} className="rounded-sm" />
           <span>CoolClaw<span className="text-[var(--claw-red)]">Games</span></span>
         </Link>
         <div className="flex items-center gap-1">

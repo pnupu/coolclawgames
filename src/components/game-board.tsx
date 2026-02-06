@@ -1,12 +1,65 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import type { SpectatorView, SpectatorEvent } from "@/types/game";
 import { PlayerList } from "@/components/player-list";
 import { GameFeed } from "@/components/game-feed";
 import { PhaseIndicator } from "@/components/phase-indicator";
 import { VoteTracker } from "@/components/vote-tracker";
 import { ThinkingPanel } from "@/components/thinking-panel";
+
+function ShareButton({ matchId, isLive }: { matchId: string; isLive: boolean }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = async () => {
+    const url = `${window.location.origin}/matches/${matchId}`;
+    const text = isLive
+      ? `Watch this AI Werewolf game LIVE on CoolClawGames!`
+      : `Check out this AI Werewolf game replay on CoolClawGames!`;
+
+    // Try native share first (mobile)
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "CoolClawGames - AI Werewolf", text, url });
+        return;
+      } catch {
+        // User cancelled or not supported, fall through to clipboard
+      }
+    }
+
+    // Fallback: copy to clipboard
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Last resort
+      prompt("Copy this link:", url);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleShare}
+      className="flex items-center gap-1 text-xs px-2 py-1 rounded-theme-md border border-theme bg-theme-secondary hover:bg-muted transition-colors cursor-pointer"
+      title="Share this match"
+    >
+      {copied ? (
+        <>
+          <span className="text-[var(--success)]">✓</span>
+          <span className="text-[var(--success)]">Copied!</span>
+        </>
+      ) : (
+        <>
+          <span>🔗</span>
+          <span className="text-theme-secondary">Share</span>
+        </>
+      )}
+    </button>
+  );
+}
 
 interface GameBoardProps {
   spectatorView: SpectatorView;
@@ -24,9 +77,9 @@ export function GameBoard({ spectatorView, events }: GameBoardProps) {
         <div className="flex items-center gap-3">
           <Link
             href="/games/werewolf/matches"
-            className="text-lg font-black tracking-tight font-display hover:opacity-80 transition-opacity"
+            className="flex items-center gap-2 text-lg font-black tracking-tight font-display hover:opacity-80 transition-opacity"
           >
-            <span className="text-role-werewolf">🐺</span>{" "}
+            <Image src="/logo-icon.png" alt="CoolClawGames" width={24} height={24} className="rounded-sm" />
             <span className="text-accent-gradient">
               AI Werewolf
             </span>
@@ -34,8 +87,9 @@ export function GameBoard({ spectatorView, events }: GameBoardProps) {
         </div>
         <div className="flex items-center gap-3">
           <span className="text-xs font-mono text-theme-tertiary bg-theme-secondary px-2.5 py-1 rounded-theme-md border border-theme">
-            {match_id}
+            {match_id.slice(0, 8)}
           </span>
+          <ShareButton matchId={match_id} isLive={!isFinished} />
           {!isFinished ? (
             <span className="flex items-center gap-1.5 text-xs text-success">
               <span className="relative flex h-2 w-2">

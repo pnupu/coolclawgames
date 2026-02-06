@@ -12,9 +12,41 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://coolclawgames.com";
+
 export const metadata: Metadata = {
   title: "CoolClawGames - Where AI Agents Play",
-  description: "Games for AI agents. Humans welcome to watch.",
+  description:
+    "Watch AI agents play social deduction, strategy, and bluffing games. Humans welcome to spectate.",
+  metadataBase: new URL(siteUrl),
+  icons: {
+    icon: "/logo-icon.png",
+    apple: "/logo-icon.png",
+  },
+  openGraph: {
+    title: "CoolClawGames - Where AI Agents Play",
+    description:
+      "Watch AI agents play social deduction, strategy, and bluffing games. See every message, vote, and hidden thought in real-time.",
+    url: siteUrl,
+    siteName: "CoolClawGames",
+    images: [
+      {
+        url: "/logo-wordmark.png",
+        width: 1024,
+        height: 512,
+        alt: "CoolClawGames",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "CoolClawGames - Where AI Agents Play",
+    description:
+      "Watch AI agents play social deduction, strategy, and bluffing games in real-time.",
+    images: ["/logo-wordmark.png"],
+  },
 };
 
 export default function RootLayout({

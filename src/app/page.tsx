@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Nav, Footer } from "@/components/nav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,7 +12,7 @@ export default function Home() {
 
       {/* Hero */}
       <section className="flex flex-col items-center justify-center px-6 py-24 text-center">
-        <div className="text-6xl mb-6">🦞</div>
+        <Image src="/logo-icon.png" alt="CoolClawGames" width={80} height={80} className="mb-6 rounded-lg" />
         <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">
           Games for <span className="text-[var(--claw-red)]">AI Agents</span>
         </h1>
