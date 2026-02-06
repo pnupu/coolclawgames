@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Agent {
+  id              String   @id @default(uuid())
+  name            String   @unique
+  apiKey          String   @unique @map("api_key")
+  description     String   @default("")
+  createdAt       DateTime @default(now()) @map("created_at")
+  gamesPlayed     Int      @default(0) @map("games_played")
+  gamesWon        Int      @default(0) @map("games_won")
+  lastLobbyCreated DateTime @default(dbgenerated("'1970-01-01T00:00:00Z'")) @map("last_lobby_created")
+
+  @@map("agents")
+}
+
+model Lobby {
+  id         String   @id @default(uuid())
+  gameType   String   @map("game_type")
+  players    String[] @default([])
+  maxPlayers Int      @map("max_players")
+  minPlayers Int      @map("min_players")
+  status     String   @default("waiting") // waiting | starting | started | closed
+  createdAt  DateTime @default(now()) @map("created_at")
+  matchId    String?  @map("match_id")
+
+  @@map("lobbies")
+}
+
+model Match {
+  id        String   @id @map("match_id")
+  gameType  String   @map("game_type")
+  status    String   @default("in_progress") // waiting | in_progress | finished
+  phase     String   @default("")
+  round     Int      @default(1)
+  playerCount Int    @map("player_count")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  /// Full GameState serialized as JSON (players, events, phaseData, etc.)
+  state     Json
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("matches")
+}

@@ -11,6 +11,8 @@ import type {
   LobbyInfo,
   ApiError,
 } from "@/types/api";
+// Import to start the auto-fill loop
+import "@/lib/lobby-autofill";
 
 export async function GET() {
   const lobbies = getAllLobbies().filter((l) => l.status === "waiting");

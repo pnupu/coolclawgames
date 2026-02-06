@@ -16,7 +16,7 @@ const ROLE_TEXT_CLASSES: Record<string, string> = {
 };
 
 export function ThinkingPanel({ events }: ThinkingPanelProps) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
 
   // Extract events that have thinking fields, most recent first
   const thoughts = events

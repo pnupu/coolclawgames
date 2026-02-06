@@ -1,15 +1,14 @@
 // ============================================================
-// In-memory Store -- agents, lobbies, matches
-// With JSON file persistence for replays and debugging
+// Store -- agents, lobbies, matches
+// In-memory cache for hot game state + PostgreSQL persistence via Prisma
 // ============================================================
 
 import type { GameState, AgentId, MatchId, LobbyId } from "@/types/game";
 import type { LobbyInfo } from "@/types/api";
 import { EventEmitter } from "events";
-import fs from "fs";
-import path from "path";
+import { prisma } from "@/lib/prisma";
 
-/** Stored agent record */
+/** Stored agent record (in-memory shape, mirrors DB) */
 export interface StoredAgent {
   id: AgentId;
   name: string;
@@ -18,47 +17,39 @@ export interface StoredAgent {
   createdAt: number;
   gamesPlayed: number;
   gamesWon: number;
-  /** Rate limiting: last action timestamps */
   lastLobbyCreated: number;
+  /** Rate limiting: kept in-memory only (not persisted) */
   requestTimestamps: number[];
 }
 
 /** Global event emitter for turn notifications + SSE */
-export const gameEvents = new EventEmitter();
-gameEvents.setMaxListeners(100);
-
-/** In-memory stores */
-const agents = new Map<string, StoredAgent>();       // apiKey -> agent
-const agentsByName = new Map<string, StoredAgent>();  // name -> agent
-const lobbies = new Map<LobbyId, LobbyInfo>();
-const matches = new Map<MatchId, GameState>();
+const globalEvents = globalThis as unknown as { __ccg_events?: EventEmitter };
+export const gameEvents = globalEvents.__ccg_events ??= (() => {
+  const ee = new EventEmitter();
+  ee.setMaxListeners(100);
+  return ee;
+})();
 
 // ============================================================
-// Persistence -- save games to JSON files
+// In-memory caches (for synchronous access during gameplay)
+// Use globalThis to survive Next.js module reloads in dev
+// ============================================================
+const globalStore = globalThis as unknown as {
+  __ccg_agentsByKey?: Map<string, StoredAgent>;
+  __ccg_agentsByName?: Map<string, StoredAgent>;
+  __ccg_lobbies?: Map<LobbyId, LobbyInfo>;
+  __ccg_matches?: Map<MatchId, GameState>;
+};
+
+const agentsByKey = globalStore.__ccg_agentsByKey ??= new Map<string, StoredAgent>();
+const agentsByName = globalStore.__ccg_agentsByName ??= new Map<string, StoredAgent>();
+const lobbies = globalStore.__ccg_lobbies ??= new Map<LobbyId, LobbyInfo>();
+const matches = globalStore.__ccg_matches ??= new Map<MatchId, GameState>();
+
+// ============================================================
+// Serialization helpers (GameState has Set which can't go to JSON)
 // ============================================================
 
-/** Directory for saving game data */
-function getDataDir(): string {
-  // On Vercel serverless: use /tmp (ephemeral but writable)
-  // Locally: use data/games/ in project root
-  if (process.env.VERCEL) {
-    return "/tmp/coolclawgames";
-  }
-  return path.join(process.cwd(), "data", "games");
-}
-
-function ensureDataDir(): void {
-  const dir = getDataDir();
-  try {
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-  } catch {
-    // Silently fail if we can't create the dir
-  }
-}
-
-/** Serialize GameState to JSON-safe format (Sets -> Arrays) */
 function serializeState(state: GameState): Record<string, unknown> {
   return {
     ...state,
@@ -66,7 +57,6 @@ function serializeState(state: GameState): Record<string, unknown> {
   };
 }
 
-/** Deserialize JSON back to GameState (Arrays -> Sets) */
 function deserializeState(data: Record<string, unknown>): GameState {
   return {
     ...data,
@@ -74,46 +64,70 @@ function deserializeState(data: Record<string, unknown>): GameState {
   } as GameState;
 }
 
-/** Save a match to disk */
-function persistMatch(state: GameState): void {
+// ============================================================
+// Initialization -- load from DB into memory on startup
+// ============================================================
+
+const globalInit = globalThis as unknown as { __ccg_initialized?: boolean };
+
+async function ensureInitialized(): Promise<void> {
+  if (globalInit.__ccg_initialized) return;
+  globalInit.__ccg_initialized = true;
+
   try {
-    ensureDataDir();
-    const filePath = path.join(getDataDir(), `${state.matchId}.json`);
-    const serialized = serializeState(state);
-    fs.writeFileSync(filePath, JSON.stringify(serialized, null, 2));
+    // Load agents
+    const dbAgents = await prisma.agent.findMany();
+    for (const a of dbAgents) {
+      const agent: StoredAgent = {
+        id: a.id,
+        name: a.name,
+        apiKey: a.apiKey,
+        description: a.description,
+        createdAt: a.createdAt.getTime(),
+        gamesPlayed: a.gamesPlayed,
+        gamesWon: a.gamesWon,
+        lastLobbyCreated: a.lastLobbyCreated.getTime(),
+        requestTimestamps: [],
+      };
+      agentsByKey.set(agent.apiKey, agent);
+      agentsByName.set(agent.name, agent);
+    }
+
+    // Load lobbies
+    const dbLobbies = await prisma.lobby.findMany({
+      where: { status: { in: ["waiting", "starting"] } },
+    });
+    for (const l of dbLobbies) {
+      const lobby: LobbyInfo = {
+        id: l.id,
+        game_type: l.gameType,
+        players: l.players,
+        max_players: l.maxPlayers,
+        min_players: l.minPlayers,
+        status: l.status as LobbyInfo["status"],
+        created_at: l.createdAt.getTime(),
+        match_id: l.matchId ?? undefined,
+      };
+      lobbies.set(lobby.id, lobby);
+    }
+
+    // Load matches
+    const dbMatches = await prisma.match.findMany();
+    for (const m of dbMatches) {
+      const state = deserializeState(m.state as Record<string, unknown>);
+      matches.set(state.matchId, state);
+    }
+
+    console.log(
+      `[store] Loaded ${dbAgents.length} agents, ${dbLobbies.length} lobbies, ${dbMatches.length} matches from DB`
+    );
   } catch (err) {
-    console.error(`Failed to persist match ${state.matchId}:`, err);
+    console.error("[store] Failed to load from DB:", err);
   }
 }
 
-/** Load all saved matches from disk into memory */
-function loadPersistedMatches(): void {
-  try {
-    const dir = getDataDir();
-    if (!fs.existsSync(dir)) return;
-
-    const files = fs.readdirSync(dir).filter((f) => f.endsWith(".json"));
-    for (const file of files) {
-      try {
-        const filePath = path.join(dir, file);
-        const raw = fs.readFileSync(filePath, "utf-8");
-        const data = JSON.parse(raw);
-        const state = deserializeState(data);
-        matches.set(state.matchId, state);
-      } catch (err) {
-        console.error(`Failed to load match from ${file}:`, err);
-      }
-    }
-    if (files.length > 0) {
-      console.log(`Loaded ${files.length} persisted matches`);
-    }
-  } catch {
-    // Silently fail
-  }
-}
-
-// Load persisted matches on module initialization
-loadPersistedMatches();
+// Trigger initialization immediately
+ensureInitialized();
 
 // --- Agent operations ---
 
@@ -130,13 +144,30 @@ export function createAgent(name: string, description: string): StoredAgent {
     lastLobbyCreated: 0,
     requestTimestamps: [],
   };
-  agents.set(apiKey, agent);
+  agentsByKey.set(apiKey, agent);
   agentsByName.set(name, agent);
+
+  // Persist to DB (fire-and-forget)
+  prisma.agent
+    .create({
+      data: {
+        id: agent.id,
+        name: agent.name,
+        apiKey: agent.apiKey,
+        description: agent.description,
+        createdAt: new Date(agent.createdAt),
+        gamesPlayed: agent.gamesPlayed,
+        gamesWon: agent.gamesWon,
+        lastLobbyCreated: new Date(agent.lastLobbyCreated || 0),
+      },
+    })
+    .catch((err) => console.error("[store] Failed to persist agent:", err));
+
   return agent;
 }
 
 export function getAgentByKey(apiKey: string): StoredAgent | undefined {
-  return agents.get(apiKey);
+  return agentsByKey.get(apiKey);
 }
 
 export function getAgentByName(name: string): StoredAgent | undefined {
@@ -147,6 +178,21 @@ export function getAgentByName(name: string): StoredAgent | undefined {
 
 export function createLobby(lobby: LobbyInfo): void {
   lobbies.set(lobby.id, lobby);
+
+  prisma.lobby
+    .create({
+      data: {
+        id: lobby.id,
+        gameType: lobby.game_type,
+        players: lobby.players,
+        maxPlayers: lobby.max_players,
+        minPlayers: lobby.min_players,
+        status: lobby.status,
+        createdAt: new Date(lobby.created_at),
+        matchId: lobby.match_id ?? null,
+      },
+    })
+    .catch((err) => console.error("[store] Failed to persist lobby:", err));
 }
 
 export function getLobby(id: LobbyId): LobbyInfo | undefined {
@@ -161,18 +207,48 @@ export function updateLobby(id: LobbyId, updates: Partial<LobbyInfo>): void {
   const lobby = lobbies.get(id);
   if (lobby) {
     Object.assign(lobby, updates);
+
+    // Build Prisma update data from the updates
+    const dbUpdates: Record<string, unknown> = {};
+    if (updates.players !== undefined) dbUpdates.players = updates.players;
+    if (updates.status !== undefined) dbUpdates.status = updates.status;
+    if (updates.match_id !== undefined) dbUpdates.matchId = updates.match_id;
+
+    if (Object.keys(dbUpdates).length > 0) {
+      prisma.lobby
+        .update({ where: { id }, data: dbUpdates })
+        .catch((err) => console.error("[store] Failed to update lobby:", err));
+    }
   }
 }
 
 export function deleteLobby(id: LobbyId): void {
   lobbies.delete(id);
+
+  prisma.lobby
+    .delete({ where: { id } })
+    .catch((err) => console.error("[store] Failed to delete lobby:", err));
 }
 
 // --- Match operations ---
 
 export function createMatch(state: GameState): void {
   matches.set(state.matchId, state);
-  persistMatch(state);
+
+  prisma.match
+    .create({
+      data: {
+        id: state.matchId,
+        gameType: state.gameType,
+        status: state.status,
+        phase: state.phase,
+        round: state.round,
+        playerCount: state.players.length,
+        createdAt: new Date(state.createdAt),
+        state: serializeState(state) as object,
+      },
+    })
+    .catch((err) => console.error("[store] Failed to persist match:", err));
 }
 
 export function getMatch(id: MatchId): GameState | undefined {
@@ -185,8 +261,19 @@ export function getAllMatches(): GameState[] {
 
 export function updateMatch(id: MatchId, state: GameState): void {
   matches.set(id, state);
-  // Persist on every update (for debugging) and especially on game end (for replays)
-  persistMatch(state);
+
+  prisma.match
+    .update({
+      where: { id },
+      data: {
+        status: state.status,
+        phase: state.phase,
+        round: state.round,
+        playerCount: state.players.length,
+        state: serializeState(state) as object,
+      },
+    })
+    .catch((err) => console.error("[store] Failed to update match:", err));
 }
 
 /** Get raw serialized match for export/download */
@@ -196,7 +283,7 @@ export function exportMatch(id: MatchId): Record<string, unknown> | undefined {
   return serializeState(state);
 }
 
-// --- Rate limiting ---
+// --- Rate limiting (in-memory only, no DB) ---
 
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX = 100;
@@ -221,5 +308,14 @@ export function checkLobbyCooldown(agent: StoredAgent): boolean {
     return false;
   }
   agent.lastLobbyCreated = now;
+
+  // Persist cooldown update
+  prisma.agent
+    .update({
+      where: { id: agent.id },
+      data: { lastLobbyCreated: new Date(now) },
+    })
+    .catch(() => {});
+
   return true;
 }

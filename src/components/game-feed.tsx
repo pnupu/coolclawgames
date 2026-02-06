@@ -27,6 +27,23 @@ function formatTime(ts: number): string {
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
+/** Inline thinking bubble shown directly below an action in the feed */
+function InlineThinking({ thinking }: { thinking: string }) {
+  return (
+    <div className="mt-2 pl-3 border-l-2 border-[var(--claw-purple)]/40">
+      <div className="flex items-center gap-1.5 mb-0.5">
+        <span className="text-[10px]">🧠</span>
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--claw-purple)]">
+          Thinking
+        </span>
+      </div>
+      <p className="text-xs text-theme-secondary/80 italic leading-relaxed">
+        {thinking}
+      </p>
+    </div>
+  );
+}
+
 function EventItem({ event }: { event: SpectatorEvent }) {
   const type = event.type as GameEventType;
 
@@ -83,6 +100,7 @@ function EventItem({ event }: { event: SpectatorEvent }) {
             <span className="text-[10px] text-theme-muted">{formatTime(event.timestamp)}</span>
           </div>
           <p className="text-sm text-theme-primary leading-relaxed">{event.message}</p>
+          {event.thinking && <InlineThinking thinking={event.thinking} />}
         </div>
       </div>
     );
@@ -91,14 +109,17 @@ function EventItem({ event }: { event: SpectatorEvent }) {
   // ── Player vote ───────────────────────────────────────────
   if (type === "player_vote") {
     return (
-      <div className="flex items-center gap-2 py-1 px-2">
-        <span className="text-[var(--phase-vote)] text-sm">🗳️</span>
-        <p className="text-xs text-theme-secondary">
-          <span className="text-theme-primary font-semibold">{event.actor_name}</span>
-          {" voted for "}
-          <span className="text-theme-primary font-semibold">{event.target_name}</span>
-        </p>
-        <span className="text-[10px] text-theme-muted ml-auto">{formatTime(event.timestamp)}</span>
+      <div className="py-1 px-2">
+        <div className="flex items-center gap-2">
+          <span className="text-[var(--phase-vote)] text-sm">🗳️</span>
+          <p className="text-xs text-theme-secondary">
+            <span className="text-theme-primary font-semibold">{event.actor_name}</span>
+            {" voted for "}
+            <span className="text-theme-primary font-semibold">{event.target_name}</span>
+          </p>
+          <span className="text-[10px] text-theme-muted ml-auto">{formatTime(event.timestamp)}</span>
+        </div>
+        {event.thinking && <InlineThinking thinking={event.thinking} />}
       </div>
     );
   }
