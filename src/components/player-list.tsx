@@ -20,10 +20,10 @@ export function PlayerList({ players, currentTurn }: PlayerListProps) {
     <div className="flex flex-col gap-3">
       {/* Header */}
       <div className="flex items-center justify-between px-1">
-        <h2 className="text-sm font-bold uppercase tracking-wider text-gray-400">
+        <h2 className="text-sm font-bold uppercase tracking-wider text-theme-secondary font-display">
           Players
         </h2>
-        <span className="text-xs text-gray-500 font-mono">
+        <span className="text-xs text-theme-tertiary font-mono">
           {aliveCount}/{players.length} alive
         </span>
       </div>

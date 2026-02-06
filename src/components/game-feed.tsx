@@ -8,18 +8,18 @@ interface GameFeedProps {
   events: SpectatorEvent[];
 }
 
-const ROLE_COLORS: Record<string, string> = {
-  werewolf: "text-red-400",
-  villager: "text-blue-400",
-  seer: "text-purple-400",
-  doctor: "text-green-400",
+const ROLE_TEXT_CLASSES: Record<string, string> = {
+  werewolf: "text-role-werewolf",
+  villager: "text-role-villager",
+  seer: "text-role-seer",
+  doctor: "text-role-doctor",
 };
 
-const ROLE_BG: Record<string, string> = {
-  werewolf: "bg-red-950/30 border-red-900/40",
-  villager: "bg-blue-950/30 border-blue-900/40",
-  seer: "bg-purple-950/30 border-purple-900/40",
-  doctor: "bg-green-950/30 border-green-900/40",
+const ROLE_BG_CLASSES: Record<string, string> = {
+  werewolf: "bg-role-werewolf border-[var(--role-werewolf)]/30",
+  villager: "bg-role-villager border-[var(--role-villager)]/30",
+  seer: "bg-role-seer border-[var(--role-seer)]/30",
+  doctor: "bg-role-doctor border-[var(--role-doctor)]/30",
 };
 
 function formatTime(ts: number): string {
@@ -34,9 +34,9 @@ function EventItem({ event }: { event: SpectatorEvent }) {
   if (type === "game_started") {
     return (
       <div className="flex justify-center py-3">
-        <div className="bg-linear-to-r from-amber-900/40 via-amber-800/50 to-amber-900/40 border border-amber-700/40 rounded-xl px-5 py-3 text-center max-w-lg">
-          <p className="text-amber-300 font-bold text-sm">🎮 Game Started</p>
-          <p className="text-amber-200/80 text-xs mt-1">{event.message}</p>
+        <div className="bg-[var(--warning)]/20 border border-[var(--warning)]/30 rounded-theme-xl px-5 py-3 text-center max-w-lg shadow-theme-card">
+          <p className="text-warning font-bold text-sm font-display">🎮 Game Started</p>
+          <p className="text-warning/80 text-xs mt-1">{event.message}</p>
         </div>
       </div>
     );
@@ -46,9 +46,9 @@ function EventItem({ event }: { event: SpectatorEvent }) {
   if (type === "game_over") {
     return (
       <div className="flex justify-center py-4">
-        <div className="bg-linear-to-r from-yellow-900/50 via-yellow-800/60 to-yellow-900/50 border border-yellow-600/50 rounded-2xl px-6 py-4 text-center max-w-md shadow-lg shadow-yellow-900/20">
-          <p className="text-yellow-300 font-black text-lg">🏆 Game Over!</p>
-          <p className="text-yellow-200/90 text-sm mt-1">{event.message}</p>
+        <div className="bg-[var(--warning)]/30 border border-[var(--warning)]/50 rounded-theme-xl px-6 py-4 text-center max-w-md shadow-theme-glow">
+          <p className="text-warning font-black text-lg font-display">🏆 Game Over!</p>
+          <p className="text-warning/90 text-sm mt-1">{event.message}</p>
         </div>
       </div>
     );
@@ -58,11 +58,11 @@ function EventItem({ event }: { event: SpectatorEvent }) {
   if (type === "phase_change") {
     return (
       <div className="flex items-center gap-3 py-2">
-        <div className="flex-1 h-px bg-gray-800" />
-        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap">
+        <div className="flex-1 h-px bg-theme-tertiary/50" />
+        <span className="text-xs font-semibold text-theme-secondary uppercase tracking-wider whitespace-nowrap font-display">
           {event.message}
         </span>
-        <div className="flex-1 h-px bg-gray-800" />
+        <div className="flex-1 h-px bg-theme-tertiary/50" />
       </div>
     );
   }
@@ -70,19 +70,19 @@ function EventItem({ event }: { event: SpectatorEvent }) {
   // ── Player speak — speech bubble ──────────────────────────
   if (type === "player_speak") {
     const role = (event.actor_role ?? "villager") as WerewolfRole;
-    const roleColor = ROLE_COLORS[role] ?? "text-gray-400";
-    const roleBg = ROLE_BG[role] ?? "bg-gray-900/30 border-gray-800";
+    const roleTextClass = ROLE_TEXT_CLASSES[role] ?? "text-theme-secondary";
+    const roleBgClass = ROLE_BG_CLASSES[role] ?? "bg-theme-card border-theme";
 
     return (
       <div className="py-1">
-        <div className={`rounded-xl border px-4 py-3 ${roleBg}`}>
+        <div className={`rounded-theme-lg border px-4 py-3 ${roleBgClass}`}>
           <div className="flex items-center gap-2 mb-1">
-            <span className={`text-xs font-bold ${roleColor}`}>
+            <span className={`text-xs font-bold ${roleTextClass} font-display`}>
               {event.actor_name}
             </span>
-            <span className="text-[10px] text-gray-600">{formatTime(event.timestamp)}</span>
+            <span className="text-[10px] text-theme-muted">{formatTime(event.timestamp)}</span>
           </div>
-          <p className="text-sm text-gray-200 leading-relaxed">{event.message}</p>
+          <p className="text-sm text-theme-primary leading-relaxed">{event.message}</p>
         </div>
       </div>
     );
@@ -92,13 +92,13 @@ function EventItem({ event }: { event: SpectatorEvent }) {
   if (type === "player_vote") {
     return (
       <div className="flex items-center gap-2 py-1 px-2">
-        <span className="text-orange-400 text-sm">🗳️</span>
-        <p className="text-xs text-gray-400">
-          <span className="text-gray-200 font-semibold">{event.actor_name}</span>
+        <span className="text-[var(--phase-vote)] text-sm">🗳️</span>
+        <p className="text-xs text-theme-secondary">
+          <span className="text-theme-primary font-semibold">{event.actor_name}</span>
           {" voted for "}
-          <span className="text-gray-200 font-semibold">{event.target_name}</span>
+          <span className="text-theme-primary font-semibold">{event.target_name}</span>
         </p>
-        <span className="text-[10px] text-gray-600 ml-auto">{formatTime(event.timestamp)}</span>
+        <span className="text-[10px] text-theme-muted ml-auto">{formatTime(event.timestamp)}</span>
       </div>
     );
   }
@@ -107,9 +107,9 @@ function EventItem({ event }: { event: SpectatorEvent }) {
   if (type === "player_eliminated") {
     return (
       <div className="flex justify-center py-2">
-        <div className="bg-red-950/50 border border-red-800/50 rounded-xl px-5 py-2.5 text-center max-w-md">
-          <p className="text-red-300 font-bold text-sm">☠️ Eliminated</p>
-          <p className="text-red-200/80 text-xs mt-0.5">{event.message}</p>
+        <div className="bg-[var(--danger)]/20 border border-[var(--danger)]/40 rounded-theme-lg px-5 py-2.5 text-center max-w-md">
+          <p className="text-danger font-bold text-sm font-display">☠️ Eliminated</p>
+          <p className="text-danger/80 text-xs mt-0.5">{event.message}</p>
         </div>
       </div>
     );
@@ -119,9 +119,9 @@ function EventItem({ event }: { event: SpectatorEvent }) {
   if (type === "player_saved") {
     return (
       <div className="flex justify-center py-2">
-        <div className="bg-green-950/50 border border-green-800/50 rounded-xl px-5 py-2.5 text-center max-w-md">
-          <p className="text-green-300 font-bold text-sm">💚 Saved!</p>
-          <p className="text-green-200/80 text-xs mt-0.5">{event.message}</p>
+        <div className="bg-[var(--success)]/20 border border-[var(--success)]/40 rounded-theme-lg px-5 py-2.5 text-center max-w-md">
+          <p className="text-success font-bold text-sm font-display">💚 Saved!</p>
+          <p className="text-success/80 text-xs mt-0.5">{event.message}</p>
         </div>
       </div>
     );
@@ -131,8 +131,8 @@ function EventItem({ event }: { event: SpectatorEvent }) {
   if (type === "night_result") {
     return (
       <div className="flex justify-center py-2">
-        <div className="bg-indigo-950/50 border border-indigo-800/40 rounded-xl px-5 py-2.5 text-center max-w-md">
-          <p className="text-indigo-200/90 text-xs">{event.message}</p>
+        <div className="bg-[var(--phase-night)]/20 border border-[var(--phase-night)]/30 rounded-theme-lg px-5 py-2.5 text-center max-w-md">
+          <p className="text-phase-night/90 text-xs">{event.message}</p>
         </div>
       </div>
     );
@@ -141,7 +141,7 @@ function EventItem({ event }: { event: SpectatorEvent }) {
   // ── Fallback ──────────────────────────────────────────────
   return (
     <div className="px-2 py-1">
-      <p className="text-xs text-gray-500">{event.message}</p>
+      <p className="text-xs text-theme-tertiary">{event.message}</p>
     </div>
   );
 }
@@ -156,12 +156,12 @@ export function GameFeed({ events }: GameFeedProps) {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-800/60">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-theme bg-theme-secondary/30">
         <span className="text-sm">📜</span>
-        <h2 className="text-sm font-bold uppercase tracking-wider text-gray-400">
+        <h2 className="text-sm font-bold uppercase tracking-wider text-theme-secondary font-display">
           Game Feed
         </h2>
-        <span className="text-xs text-gray-600 ml-auto font-mono">
+        <span className="text-xs text-theme-muted ml-auto font-mono">
           {events.length} events
         </span>
       </div>
@@ -170,7 +170,7 @@ export function GameFeed({ events }: GameFeedProps) {
       <div className="flex-1 overflow-y-auto px-3 py-2 space-y-0.5 scroll-smooth">
         {events.length === 0 && (
           <div className="flex items-center justify-center h-full">
-            <p className="text-gray-600 text-sm">Waiting for game events…</p>
+            <p className="text-theme-muted text-sm">Waiting for game events…</p>
           </div>
         )}
         {events.map((event) => (

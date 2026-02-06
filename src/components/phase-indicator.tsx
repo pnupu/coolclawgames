@@ -7,30 +7,30 @@ interface PhaseIndicatorProps {
   round: number;
 }
 
-const PHASE_CONFIG: Record<WerewolfPhase, { icon: string; label: string; color: string; bg: string }> = {
+const PHASE_CONFIG: Record<WerewolfPhase, { icon: string; label: string; colorClass: string; bgClass: string }> = {
   day_discussion: {
     icon: "☀️",
     label: "Day Discussion",
-    color: "text-yellow-300",
-    bg: "from-yellow-900/30 to-yellow-950/10",
+    colorClass: "text-phase-day",
+    bgClass: "from-[var(--phase-day)]/20 to-[var(--phase-day)]/5",
   },
   day_vote: {
     icon: "🗳️",
     label: "Day Vote",
-    color: "text-orange-300",
-    bg: "from-orange-900/30 to-orange-950/10",
+    colorClass: "text-phase-vote",
+    bgClass: "from-[var(--phase-vote)]/20 to-[var(--phase-vote)]/5",
   },
   night_action: {
     icon: "🌙",
     label: "Night",
-    color: "text-indigo-300",
-    bg: "from-indigo-900/30 to-indigo-950/10",
+    colorClass: "text-phase-night",
+    bgClass: "from-[var(--phase-night)]/20 to-[var(--phase-night)]/5",
   },
   dawn_reveal: {
     icon: "🌅",
     label: "Dawn",
-    color: "text-amber-300",
-    bg: "from-amber-900/30 to-amber-950/10",
+    colorClass: "text-phase-dawn",
+    bgClass: "from-[var(--phase-dawn)]/20 to-[var(--phase-dawn)]/5",
   },
 };
 
@@ -38,17 +38,17 @@ export function PhaseIndicator({ phase, round }: PhaseIndicatorProps) {
   const config = PHASE_CONFIG[phase as WerewolfPhase] ?? {
     icon: "⏳",
     label: phase,
-    color: "text-gray-300",
-    bg: "from-gray-900/30 to-gray-950/10",
+    colorClass: "text-theme-secondary",
+    bgClass: "from-theme-secondary/20 to-theme-secondary/5",
   };
 
   return (
-    <div className={`rounded-xl border border-gray-800/60 bg-linear-to-br ${config.bg} p-4 transition-all duration-500`}>
+    <div className={`rounded-theme-lg border border-theme bg-gradient-to-br ${config.bgClass} p-4 transition-all duration-500 shadow-theme-card`}>
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
+        <span className="text-xs font-bold uppercase tracking-wider text-theme-tertiary font-display">
           Current Phase
         </span>
-        <span className="text-xs font-mono text-gray-500 bg-gray-800/50 px-2 py-0.5 rounded-full">
+        <span className="text-xs font-mono text-theme-tertiary bg-theme-secondary/50 px-2 py-0.5 rounded-theme-sm">
           Round {round}
         </span>
       </div>
@@ -56,7 +56,7 @@ export function PhaseIndicator({ phase, round }: PhaseIndicatorProps) {
       <div className="flex items-center gap-3">
         <span className="text-3xl transition-transform duration-500">{config.icon}</span>
         <div>
-          <p className={`text-lg font-black ${config.color} transition-colors duration-500`}>
+          <p className={`text-lg font-black ${config.colorClass} transition-colors duration-500 font-display`}>
             {config.label}
           </p>
         </div>

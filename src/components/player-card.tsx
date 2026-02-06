@@ -8,30 +8,30 @@ interface PlayerCardProps {
   isCurrentTurn: boolean;
 }
 
-const ROLE_CONFIG: Record<WerewolfRole, { emoji: string; color: string; bg: string; border: string }> = {
+const ROLE_CONFIG: Record<WerewolfRole, { emoji: string; textClass: string; bgClass: string; borderClass: string }> = {
   werewolf: {
     emoji: "🐺",
-    color: "text-red-400",
-    bg: "bg-red-950/40",
-    border: "border-red-800/60",
+    textClass: "text-role-werewolf",
+    bgClass: "bg-role-werewolf",
+    borderClass: "border-[var(--role-werewolf)]/40",
   },
   villager: {
     emoji: "🧑",
-    color: "text-blue-400",
-    bg: "bg-blue-950/40",
-    border: "border-blue-800/60",
+    textClass: "text-role-villager",
+    bgClass: "bg-role-villager",
+    borderClass: "border-[var(--role-villager)]/40",
   },
   seer: {
     emoji: "👁️",
-    color: "text-purple-400",
-    bg: "bg-purple-950/40",
-    border: "border-purple-800/60",
+    textClass: "text-role-seer",
+    bgClass: "bg-role-seer",
+    borderClass: "border-[var(--role-seer)]/40",
   },
   doctor: {
     emoji: "💊",
-    color: "text-green-400",
-    bg: "bg-green-950/40",
-    border: "border-green-800/60",
+    textClass: "text-role-doctor",
+    bgClass: "bg-role-doctor",
+    borderClass: "border-[var(--role-doctor)]/40",
   },
 };
 
@@ -43,10 +43,10 @@ export function PlayerCard({ player, isCurrentTurn }: PlayerCardProps) {
   return (
     <div
       className={`
-        relative flex items-center gap-3 rounded-xl border px-3 py-2.5
+        relative flex items-center gap-3 rounded-theme-lg border px-3 py-2.5
         transition-all duration-300
-        ${isDead ? "border-gray-800/40 bg-gray-900/30 opacity-50" : `${config.border} ${config.bg}`}
-        ${isCurrentTurn && !isDead ? "ring-2 ring-amber-400/60 shadow-lg shadow-amber-400/10" : ""}
+        ${isDead ? "border-theme bg-theme-secondary/30 opacity-50" : `${config.borderClass} ${config.bgClass}`}
+        ${isCurrentTurn && !isDead ? "ring-2 ring-[var(--warning)]/60 shadow-theme-glow" : ""}
       `}
     >
       {/* Role emoji */}
@@ -58,13 +58,13 @@ export function PlayerCard({ player, isCurrentTurn }: PlayerCardProps) {
       <div className="min-w-0 flex-1">
         <p
           className={`
-            text-sm font-semibold truncate
-            ${isDead ? "line-through text-gray-500" : "text-gray-100"}
+            text-sm font-semibold truncate font-display
+            ${isDead ? "line-through text-theme-tertiary" : "text-theme-primary"}
           `}
         >
           {player.agent_name}
         </p>
-        <p className={`text-xs ${isDead ? "text-gray-600" : config.color}`}>
+        <p className={`text-xs ${isDead ? "text-theme-muted" : config.textClass}`}>
           {role.charAt(0).toUpperCase() + role.slice(1)}
         </p>
       </div>
@@ -72,14 +72,14 @@ export function PlayerCard({ player, isCurrentTurn }: PlayerCardProps) {
       {/* Status badges */}
       <div className="flex items-center gap-1.5 shrink-0">
         {isDead && (
-          <span className="text-xs bg-gray-800 text-gray-400 px-1.5 py-0.5 rounded-full">
+          <span className="text-xs bg-theme-secondary text-theme-tertiary px-1.5 py-0.5 rounded-theme-sm">
             💀 Dead
           </span>
         )}
         {isCurrentTurn && !isDead && (
           <span className="relative flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-400" />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--warning)] opacity-75" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[var(--warning)]" />
           </span>
         )}
       </div>

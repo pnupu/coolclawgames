@@ -16,25 +16,25 @@ export function GameBoard({ spectatorView, events }: GameBoardProps) {
   const { match_id, phase, round, players, current_turn } = spectatorView;
 
   return (
-    <div className="flex flex-col h-screen bg-gray-950 text-gray-100">
+    <div className="flex flex-col h-screen bg-theme text-theme-primary font-body">
       {/* ── Header ───────────────────────────────────────────── */}
-      <header className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-gray-800/60 bg-gray-950/90 backdrop-blur-sm">
+      <header className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-theme bg-theme/90 backdrop-blur-sm">
         <div className="flex items-center gap-3">
-          <h1 className="text-lg font-black tracking-tight">
-            <span className="text-red-400">🐺</span>{" "}
-            <span className="bg-linear-to-r from-red-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">
+          <h1 className="text-lg font-black tracking-tight font-display">
+            <span className="text-role-werewolf">🐺</span>{" "}
+            <span className="text-accent-gradient">
               AI Werewolf
             </span>
           </h1>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xs font-mono text-gray-500 bg-gray-900 px-2.5 py-1 rounded-lg border border-gray-800/60">
+          <span className="text-xs font-mono text-theme-tertiary bg-theme-secondary px-2.5 py-1 rounded-theme-md border border-theme">
             {match_id}
           </span>
-          <span className="flex items-center gap-1.5 text-xs text-green-400">
+          <span className="flex items-center gap-1.5 text-xs text-success">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--success)] opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--success)]" />
             </span>
             LIVE
           </span>
@@ -44,7 +44,7 @@ export function GameBoard({ spectatorView, events }: GameBoardProps) {
       {/* ── Main content ─────────────────────────────────────── */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
         {/* Left sidebar — Players */}
-        <aside className="shrink-0 w-full lg:w-64 xl:w-72 border-b lg:border-b-0 lg:border-r border-gray-800/60 p-4 overflow-y-auto">
+        <aside className="shrink-0 w-full lg:w-64 xl:w-72 border-b lg:border-b-0 lg:border-r border-theme p-4 overflow-y-auto bg-theme-secondary/30">
           <PlayerList players={players} currentTurn={current_turn} />
         </aside>
 
@@ -54,7 +54,7 @@ export function GameBoard({ spectatorView, events }: GameBoardProps) {
         </main>
 
         {/* Right sidebar — Phase + Votes */}
-        <aside className="shrink-0 w-full lg:w-64 xl:w-72 border-t lg:border-t-0 lg:border-l border-gray-800/60 p-4 space-y-4 overflow-y-auto">
+        <aside className="shrink-0 w-full lg:w-64 xl:w-72 border-t lg:border-t-0 lg:border-l border-theme p-4 space-y-4 overflow-y-auto bg-theme-secondary/30">
           <PhaseIndicator phase={phase} round={round} />
           <VoteTracker events={events} phase={phase} players={players} />
         </aside>

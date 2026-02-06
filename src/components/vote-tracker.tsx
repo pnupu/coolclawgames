@@ -54,20 +54,20 @@ export function VoteTracker({ events, phase, players }: VoteTrackerProps) {
   const votedCount = votes.length;
 
   return (
-    <div className="rounded-xl border border-gray-800/60 bg-gray-900/40 p-4">
+    <div className="rounded-theme-lg border border-theme bg-theme-card p-4 shadow-theme-card">
       <div className="flex items-center gap-2 mb-3">
         <span className="text-sm">🗳️</span>
-        <h2 className="text-sm font-bold uppercase tracking-wider text-gray-400">
+        <h2 className="text-sm font-bold uppercase tracking-wider text-theme-secondary font-display">
           Vote Tracker
         </h2>
       </div>
 
       {votes.length === 0 && !isVotePhase && (
-        <p className="text-xs text-gray-600">No votes yet this round.</p>
+        <p className="text-xs text-theme-muted">No votes yet this round.</p>
       )}
 
       {votes.length === 0 && isVotePhase && (
-        <p className="text-xs text-gray-500 animate-pulse">Waiting for votes…</p>
+        <p className="text-xs text-theme-tertiary animate-pulse">Waiting for votes…</p>
       )}
 
       {sortedTargets.length > 0 && (
@@ -79,17 +79,17 @@ export function VoteTracker({ events, phase, players }: VoteTrackerProps) {
             return (
               <div key={targetId}>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-semibold text-gray-200">{data.name}</span>
-                  <span className="text-xs text-gray-500 font-mono">{data.count}</span>
+                  <span className="text-xs font-semibold text-theme-primary font-display">{data.name}</span>
+                  <span className="text-xs text-theme-tertiary font-mono">{data.count}</span>
                 </div>
                 {/* Vote bar */}
-                <div className="w-full bg-gray-800/60 rounded-full h-2 overflow-hidden">
+                <div className="w-full bg-theme-secondary/50 rounded-theme-sm h-2 overflow-hidden">
                   <div
-                    className="h-full bg-linear-to-r from-orange-500 to-red-500 rounded-full transition-all duration-500"
+                    className="h-full bg-accent-gradient rounded-theme-sm transition-all duration-500"
                     style={{ width: `${Math.max(pct, 4)}%` }}
                   />
                 </div>
-                <p className="text-[10px] text-gray-600 mt-0.5 truncate">
+                <p className="text-[10px] text-theme-muted mt-0.5 truncate">
                   {data.voters.join(", ")}
                 </p>
               </div>
@@ -100,15 +100,15 @@ export function VoteTracker({ events, phase, players }: VoteTrackerProps) {
 
       {/* Vote progress */}
       {isVotePhase && (
-        <p className="text-[10px] text-gray-600 mt-3 text-center">
+        <p className="text-[10px] text-theme-muted mt-3 text-center">
           {votedCount}/{alivePlayers.length} players voted
         </p>
       )}
 
       {/* Elimination result */}
       {eliminatedEvent && (
-        <div className="mt-3 pt-3 border-t border-gray-800/40">
-          <p className="text-xs text-red-400 font-bold text-center">
+        <div className="mt-3 pt-3 border-t border-theme">
+          <p className="text-xs text-danger font-bold text-center font-display">
             ☠️ {eliminatedEvent.message}
           </p>
         </div>

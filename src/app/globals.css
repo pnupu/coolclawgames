@@ -1,24 +1,421 @@
 @import "tailwindcss";
 
-:root {
+/* ═══════════════════════════════════════════════════════════════════════════
+   THEME 1: DEFAULT — Original dark theme
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root,
+[data-theme="default"] {
   --background: #030712;
   --foreground: #f3f4f6;
+  --background-secondary: #111827;
+  --background-tertiary: #1f2937;
+  --border-color: rgba(55, 65, 81, 0.5);
+  --border-color-strong: rgba(75, 85, 99, 0.6);
+
+  --text-primary: #f3f4f6;
+  --text-secondary: #9ca3af;
+  --text-tertiary: #6b7280;
+  --text-muted: #4b5563;
+
+  --accent-primary: #a855f7;
+  --accent-secondary: #ec4899;
+  --accent-gradient: linear-gradient(to right, #a855f7, #ec4899);
+
+  --role-werewolf: #f87171;
+  --role-werewolf-bg: rgba(127, 29, 29, 0.3);
+  --role-villager: #60a5fa;
+  --role-villager-bg: rgba(30, 58, 138, 0.3);
+  --role-seer: #a78bfa;
+  --role-seer-bg: rgba(76, 29, 149, 0.3);
+  --role-doctor: #4ade80;
+  --role-doctor-bg: rgba(20, 83, 45, 0.3);
+
+  --phase-day: #fcd34d;
+  --phase-vote: #fb923c;
+  --phase-night: #818cf8;
+  --phase-dawn: #fbbf24;
+
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --danger: #ef4444;
+
+  --card-bg: rgba(17, 24, 39, 0.5);
+  --card-border: rgba(55, 65, 81, 0.5);
+  --card-hover: rgba(31, 41, 55, 0.5);
+
+  --font-display: var(--font-geist-sans), system-ui, sans-serif;
+  --font-body: var(--font-geist-sans), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), monospace;
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+
+  --shadow-glow: 0 0 40px rgba(168, 85, 247, 0.15);
+  --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+
+  --scanline-opacity: 0;
+  --noise-opacity: 0;
+  --crt-flicker: none;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   THEME 2: TERMINAL — Retro-futuristic CRT command center
+   ═══════════════════════════════════════════════════════════════════════════ */
+[data-theme="terminal"] {
+  --background: #0a0a0a;
+  --foreground: #33ff33;
+  --background-secondary: #0d0d0d;
+  --background-tertiary: #141414;
+  --border-color: rgba(51, 255, 51, 0.2);
+  --border-color-strong: rgba(51, 255, 51, 0.4);
+
+  --text-primary: #33ff33;
+  --text-secondary: #22cc22;
+  --text-tertiary: #1a9a1a;
+  --text-muted: #115511;
+
+  --accent-primary: #33ff33;
+  --accent-secondary: #ffaa00;
+  --accent-gradient: linear-gradient(to right, #33ff33, #00ff88);
+
+  --role-werewolf: #ff3333;
+  --role-werewolf-bg: rgba(255, 51, 51, 0.1);
+  --role-villager: #33ff33;
+  --role-villager-bg: rgba(51, 255, 51, 0.1);
+  --role-seer: #00ffff;
+  --role-seer-bg: rgba(0, 255, 255, 0.1);
+  --role-doctor: #33ff88;
+  --role-doctor-bg: rgba(51, 255, 136, 0.1);
+
+  --phase-day: #ffff00;
+  --phase-vote: #ffaa00;
+  --phase-night: #0088ff;
+  --phase-dawn: #ff8800;
+
+  --success: #33ff33;
+  --warning: #ffaa00;
+  --danger: #ff3333;
+
+  --card-bg: rgba(0, 20, 0, 0.8);
+  --card-border: rgba(51, 255, 51, 0.3);
+  --card-hover: rgba(0, 40, 0, 0.8);
+
+  --font-display: var(--font-vt323), "VT323", monospace;
+  --font-body: var(--font-ibm-mono), "IBM Plex Mono", monospace;
+  --font-mono: var(--font-ibm-mono), "IBM Plex Mono", monospace;
+
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 2px;
+  --radius-xl: 4px;
+
+  --shadow-glow: 0 0 20px rgba(51, 255, 51, 0.3), 0 0 60px rgba(51, 255, 51, 0.1);
+  --shadow-card: 0 0 10px rgba(51, 255, 51, 0.2);
+
+  --scanline-opacity: 0.03;
+  --noise-opacity: 0.02;
+  --crt-flicker: crt-flicker 0.1s infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THEME 3: COLOSSEUM — Luxury editorial Roman style
+   ═══════════════════════════════════════════════════════════════════════════ */
+[data-theme="colosseum"] {
+  --background: #1a0a0a;
+  --foreground: #f5f0e1;
+  --background-secondary: #2a1515;
+  --background-tertiary: #3a2020;
+  --border-color: rgba(212, 165, 116, 0.2);
+  --border-color-strong: rgba(212, 165, 116, 0.4);
+
+  --text-primary: #f5f0e1;
+  --text-secondary: #c9b99a;
+  --text-tertiary: #9a8a6a;
+  --text-muted: #6a5a4a;
+
+  --accent-primary: #d4a574;
+  --accent-secondary: #8b0000;
+  --accent-gradient: linear-gradient(to right, #d4a574, #c9a066);
+
+  --role-werewolf: #c41e3a;
+  --role-werewolf-bg: rgba(139, 0, 0, 0.3);
+  --role-villager: #daa520;
+  --role-villager-bg: rgba(218, 165, 32, 0.15);
+  --role-seer: #9370db;
+  --role-seer-bg: rgba(147, 112, 219, 0.15);
+  --role-doctor: #228b22;
+  --role-doctor-bg: rgba(34, 139, 34, 0.15);
+
+  --phase-day: #daa520;
+  --phase-vote: #cd853f;
+  --phase-night: #4b0082;
+  --phase-dawn: #d4a574;
+
+  --success: #228b22;
+  --warning: #daa520;
+  --danger: #8b0000;
+
+  --card-bg: rgba(42, 21, 21, 0.7);
+  --card-border: rgba(212, 165, 116, 0.25);
+  --card-hover: rgba(58, 32, 32, 0.8);
+
+  --font-display: var(--font-playfair), "Playfair Display", serif;
+  --font-body: var(--font-cormorant), "Cormorant Garamond", serif;
+  --font-mono: var(--font-geist-mono), monospace;
+
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+
+  --shadow-glow: 0 0 60px rgba(212, 165, 116, 0.15);
+  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.4);
+
+  --scanline-opacity: 0;
+  --noise-opacity: 0.015;
+  --crt-flicker: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THEME 4: ARCADE — Maximalist playful chaos
+   ═══════════════════════════════════════════════════════════════════════════ */
+[data-theme="arcade"] {
+  --background: #0a0015;
+  --foreground: #ffffff;
+  --background-secondary: #150025;
+  --background-tertiary: #200035;
+  --border-color: rgba(255, 45, 146, 0.3);
+  --border-color-strong: rgba(0, 240, 255, 0.5);
+
+  --text-primary: #ffffff;
+  --text-secondary: #ff2d92;
+  --text-tertiary: #00f0ff;
+  --text-muted: #6644aa;
+
+  --accent-primary: #ff2d92;
+  --accent-secondary: #00f0ff;
+  --accent-gradient: linear-gradient(135deg, #ff2d92, #00f0ff, #e6ff00);
+
+  --role-werewolf: #ff2d92;
+  --role-werewolf-bg: rgba(255, 45, 146, 0.2);
+  --role-villager: #00f0ff;
+  --role-villager-bg: rgba(0, 240, 255, 0.15);
+  --role-seer: #e6ff00;
+  --role-seer-bg: rgba(230, 255, 0, 0.15);
+  --role-doctor: #00ff88;
+  --role-doctor-bg: rgba(0, 255, 136, 0.15);
+
+  --phase-day: #e6ff00;
+  --phase-vote: #ff8800;
+  --phase-night: #8844ff;
+  --phase-dawn: #ff2d92;
+
+  --success: #00ff88;
+  --warning: #e6ff00;
+  --danger: #ff2d92;
+
+  --card-bg: rgba(30, 0, 60, 0.8);
+  --card-border: rgba(255, 45, 146, 0.4);
+  --card-hover: rgba(50, 0, 100, 0.9);
+
+  --font-display: var(--font-bangers), "Bangers", cursive;
+  --font-body: var(--font-rubik), "Rubik", sans-serif;
+  --font-mono: var(--font-geist-mono), monospace;
+
+  --radius-sm: 0.75rem;
+  --radius-md: 1rem;
+  --radius-lg: 1.5rem;
+  --radius-xl: 2rem;
+
+  --shadow-glow: 0 0 30px rgba(255, 45, 146, 0.4), 0 0 60px rgba(0, 240, 255, 0.2);
+  --shadow-card: 0 4px 20px rgba(255, 45, 146, 0.3);
+
+  --scanline-opacity: 0;
+  --noise-opacity: 0;
+  --crt-flicker: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THEME 5: RITUAL — Dark fantasy gothic
+   ═══════════════════════════════════════════════════════════════════════════ */
+[data-theme="ritual"] {
+  --background: #0d1421;
+  --foreground: #c0c0c0;
+  --background-secondary: #0f1825;
+  --background-tertiary: #141f2d;
+  --border-color: rgba(139, 0, 0, 0.3);
+  --border-color-strong: rgba(192, 192, 192, 0.2);
+
+  --text-primary: #c0c0c0;
+  --text-secondary: #8b8b8b;
+  --text-tertiary: #5a5a5a;
+  --text-muted: #3a3a3a;
+
+  --accent-primary: #8b0000;
+  --accent-secondary: #c0c0c0;
+  --accent-gradient: linear-gradient(to right, #8b0000, #4a0000);
+
+  --role-werewolf: #8b0000;
+  --role-werewolf-bg: rgba(139, 0, 0, 0.25);
+  --role-villager: #d4c4a8;
+  --role-villager-bg: rgba(212, 196, 168, 0.1);
+  --role-seer: #6a5acd;
+  --role-seer-bg: rgba(106, 90, 205, 0.15);
+  --role-doctor: #2e8b57;
+  --role-doctor-bg: rgba(46, 139, 87, 0.15);
+
+  --phase-day: #d4c4a8;
+  --phase-vote: #8b4513;
+  --phase-night: #191970;
+  --phase-dawn: #cd853f;
+
+  --success: #2e8b57;
+  --warning: #cd853f;
+  --danger: #8b0000;
+
+  --card-bg: rgba(15, 24, 37, 0.9);
+  --card-border: rgba(139, 0, 0, 0.3);
+  --card-hover: rgba(20, 31, 45, 0.95);
+
+  --font-display: var(--font-cinzel), "Cinzel", serif;
+  --font-body: var(--font-crimson), "Crimson Text", serif;
+  --font-mono: var(--font-geist-mono), monospace;
+
+  --radius-sm: 0.125rem;
+  --radius-md: 0.25rem;
+  --radius-lg: 0.375rem;
+  --radius-xl: 0.5rem;
+
+  --shadow-glow: 0 0 80px rgba(139, 0, 0, 0.2);
+  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.5);
+
+  --scanline-opacity: 0;
+  --noise-opacity: 0.03;
+  --crt-flicker: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THEME 6: BLUEPRINT — Industrial brutalist
+   ═══════════════════════════════════════════════════════════════════════════ */
+[data-theme="blueprint"] {
+  --background: #1e3a5f;
+  --foreground: #ffffff;
+  --background-secondary: #1a3355;
+  --background-tertiary: #234570;
+  --border-color: rgba(255, 255, 255, 0.2);
+  --border-color-strong: rgba(255, 255, 255, 0.4);
+
+  --text-primary: #ffffff;
+  --text-secondary: #a8c8e8;
+  --text-tertiary: #6a98c8;
+  --text-muted: #4a7098;
+
+  --accent-primary: #ff6b00;
+  --accent-secondary: #ffffff;
+  --accent-gradient: linear-gradient(to right, #ff6b00, #ff8833);
+
+  --role-werewolf: #ff6b00;
+  --role-werewolf-bg: rgba(255, 107, 0, 0.2);
+  --role-villager: #ffffff;
+  --role-villager-bg: rgba(255, 255, 255, 0.1);
+  --role-seer: #00bfff;
+  --role-seer-bg: rgba(0, 191, 255, 0.15);
+  --role-doctor: #32cd32;
+  --role-doctor-bg: rgba(50, 205, 50, 0.15);
+
+  --phase-day: #ffdd00;
+  --phase-vote: #ff6b00;
+  --phase-night: #0066cc;
+  --phase-dawn: #ff9933;
+
+  --success: #32cd32;
+  --warning: #ffdd00;
+  --danger: #ff6b00;
+
+  --card-bg: rgba(26, 51, 85, 0.9);
+  --card-border: rgba(255, 255, 255, 0.25);
+  --card-hover: rgba(35, 69, 112, 0.95);
+
+  --font-display: var(--font-space), "Space Grotesk", sans-serif;
+  --font-body: var(--font-space), "Space Grotesk", sans-serif;
+  --font-mono: var(--font-jetbrains), "JetBrains Mono", monospace;
+
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 2px;
+  --radius-xl: 4px;
+
+  --shadow-glow: none;
+  --shadow-card: 2px 2px 0 rgba(255, 255, 255, 0.2);
+
+  --scanline-opacity: 0;
+  --noise-opacity: 0;
+  --crt-flicker: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TAILWIND THEME INTEGRATION
+   ═══════════════════════════════════════════════════════════════════════════ */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-mono);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BASE STYLES
+   ═══════════════════════════════════════════════════════════════════════════ */
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-body);
+  transition: background 0.5s ease, color 0.5s ease;
+  position: relative;
 }
 
-/* Custom scrollbar for dark theme */
+/* Scanline overlay for terminal theme */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, var(--scanline-opacity)) 2px,
+    rgba(0, 0, 0, var(--scanline-opacity)) 4px
+  );
+  animation: var(--crt-flicker);
+}
+
+/* Noise texture overlay */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  opacity: var(--noise-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%' height='100%' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+@keyframes crt-flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.98; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CUSTOM SCROLLBAR
+   ═══════════════════════════════════════════════════════════════════════════ */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -29,10 +426,285 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #374151;
-  border-radius: 3px;
+  background: var(--text-muted);
+  border-radius: var(--radius-sm);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #4b5563;
+  background: var(--text-tertiary);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THEME SWITCHER COMPONENT STYLES
+   ═══════════════════════════════════════════════════════════════════════════ */
+.theme-switcher {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-card);
+  max-width: 320px;
+}
+
+.theme-switcher-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.theme-switcher-icon {
+  font-size: 1.25rem;
+}
+
+.theme-switcher-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+}
+
+.theme-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.875rem;
+  background: var(--background-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+}
+
+.theme-btn:hover {
+  background: var(--card-hover);
+  border-color: var(--border-color-strong);
+  color: var(--text-primary);
+}
+
+.theme-btn-active {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: var(--background);
+}
+
+.theme-btn-active:hover {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: var(--background);
+}
+
+.theme-btn-icon {
+  font-size: 1rem;
+}
+
+.theme-btn-name {
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THEME-AWARE UTILITY CLASSES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Background colors */
+.bg-theme { background: var(--background); }
+.bg-theme-secondary { background: var(--background-secondary); }
+.bg-theme-tertiary { background: var(--background-tertiary); }
+.bg-theme-card { background: var(--card-bg); }
+
+/* Text colors */
+.text-theme { color: var(--foreground); }
+.text-theme-primary { color: var(--text-primary); }
+.text-theme-secondary { color: var(--text-secondary); }
+.text-theme-tertiary { color: var(--text-tertiary); }
+.text-theme-muted { color: var(--text-muted); }
+.text-theme-accent { color: var(--accent-primary); }
+
+/* Border colors */
+.border-theme { border-color: var(--border-color); }
+.border-theme-strong { border-color: var(--border-color-strong); }
+.border-theme-card { border-color: var(--card-border); }
+
+/* Role colors */
+.text-role-werewolf { color: var(--role-werewolf); }
+.text-role-villager { color: var(--role-villager); }
+.text-role-seer { color: var(--role-seer); }
+.text-role-doctor { color: var(--role-doctor); }
+
+.bg-role-werewolf { background: var(--role-werewolf-bg); }
+.bg-role-villager { background: var(--role-villager-bg); }
+.bg-role-seer { background: var(--role-seer-bg); }
+.bg-role-doctor { background: var(--role-doctor-bg); }
+
+/* Phase colors */
+.text-phase-day { color: var(--phase-day); }
+.text-phase-vote { color: var(--phase-vote); }
+.text-phase-night { color: var(--phase-night); }
+.text-phase-dawn { color: var(--phase-dawn); }
+
+/* Accent gradient */
+.bg-accent-gradient { background: var(--accent-gradient); }
+.text-accent-gradient {
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Status colors */
+.text-success { color: var(--success); }
+.text-warning { color: var(--warning); }
+.text-danger { color: var(--danger); }
+
+/* Font families */
+.font-display { font-family: var(--font-display); }
+.font-body { font-family: var(--font-body); }
+
+/* Border radius */
+.rounded-theme-sm { border-radius: var(--radius-sm); }
+.rounded-theme-md { border-radius: var(--radius-md); }
+.rounded-theme-lg { border-radius: var(--radius-lg); }
+.rounded-theme-xl { border-radius: var(--radius-xl); }
+
+/* Shadows */
+.shadow-theme-glow { box-shadow: var(--shadow-glow); }
+.shadow-theme-card { box-shadow: var(--shadow-card); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THEME-SPECIFIC OVERRIDES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Terminal theme - typewriter effect */
+[data-theme="terminal"] .animate-typewriter {
+  overflow: hidden;
+  border-right: 2px solid var(--accent-primary);
+  white-space: nowrap;
+  animation: typing 2s steps(40, end), blink-caret 0.75s step-end infinite;
+}
+
+@keyframes typing {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes blink-caret {
+  from, to { border-color: transparent; }
+  50% { border-color: var(--accent-primary); }
+}
+
+/* Terminal phosphor glow */
+[data-theme="terminal"] .glow-text {
+  text-shadow: 0 0 10px var(--accent-primary), 0 0 20px var(--accent-primary), 0 0 30px var(--accent-primary);
+}
+
+/* Colosseum marble texture hint */
+[data-theme="colosseum"] .card-elevated {
+  background: linear-gradient(135deg, var(--card-bg), rgba(212, 165, 116, 0.05));
+}
+
+/* Arcade neon pulse */
+[data-theme="arcade"] .neon-pulse {
+  animation: neon-pulse 2s ease-in-out infinite;
+}
+
+@keyframes neon-pulse {
+  0%, 100% {
+    box-shadow: 0 0 5px var(--accent-primary), 0 0 10px var(--accent-primary), 0 0 20px var(--accent-primary);
+  }
+  50% {
+    box-shadow: 0 0 10px var(--accent-primary), 0 0 20px var(--accent-primary), 0 0 40px var(--accent-primary), 0 0 60px var(--accent-secondary);
+  }
+}
+
+/* Ritual candle flicker */
+[data-theme="ritual"] .candle-flicker {
+  animation: candle-flicker 3s ease-in-out infinite;
+}
+
+@keyframes candle-flicker {
+  0%, 100% { opacity: 1; }
+  25% { opacity: 0.9; }
+  50% { opacity: 1; }
+  75% { opacity: 0.85; }
+}
+
+/* Blueprint grid background */
+[data-theme="blueprint"] .grid-bg {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Blueprint technical border */
+[data-theme="blueprint"] .technical-border {
+  border: 2px solid var(--border-color);
+  position: relative;
+}
+
+[data-theme="blueprint"] .technical-border::before,
+[data-theme="blueprint"] .technical-border::after {
+  content: "";
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border: 2px solid var(--accent-primary);
+}
+
+[data-theme="blueprint"] .technical-border::before {
+  top: -4px;
+  left: -4px;
+  border-right: none;
+  border-bottom: none;
+}
+
+[data-theme="blueprint"] .technical-border::after {
+  bottom: -4px;
+  right: -4px;
+  border-left: none;
+  border-top: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE THEME SWITCHER
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+  .theme-switcher {
+    bottom: 1rem;
+    right: 1rem;
+    left: 1rem;
+    max-width: none;
+  }
+
+  .theme-switcher-buttons {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .theme-btn-name {
+    display: none;
+  }
+
+  .theme-btn {
+    justify-content: center;
+    padding: 0.75rem;
+  }
+
+  .theme-btn-icon {
+    font-size: 1.25rem;
+  }
 }
