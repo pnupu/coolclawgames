@@ -1,5 +1,6 @@
 import { getMatch, gameEvents } from "@/lib/store";
-import { getSpectatorView } from "@/engine/game-engine";
+import { getSpectatorView, getCensoredSpectatorView } from "@/engine/game-engine";
+import { validateSpectatorToken } from "@/lib/spectator-token";
 import type { GameEvent } from "@/types/game";
 
 export async function GET(
@@ -15,6 +16,14 @@ export async function GET(
       { status: 404, headers: { "Content-Type": "application/json" } }
     );
   }
+
+  // Check for spectator token
+  const url = new URL(request.url);
+  const token = url.searchParams.get("spectator_token");
+  const isAuthorized = validateSpectatorToken(matchId, token);
+
+  // Choose the view function based on authorization
+  const getView = isAuthorized ? getSpectatorView : getCensoredSpectatorView;
 
   const stream = new ReadableStream({
     start(controller) {
@@ -33,7 +42,7 @@ export async function GET(
       // Send initial state
       const currentMatch = getMatch(matchId);
       if (currentMatch) {
-        send("state_update", getSpectatorView(currentMatch));
+        send("state_update", getView(currentMatch));
       }
 
       // Listen for new game events
@@ -41,7 +50,7 @@ export async function GET(
         // Get fresh state for spectator event conversion
         const freshMatch = getMatch(matchId);
         if (!freshMatch) return;
-        const specView = getSpectatorView(freshMatch);
+        const specView = getView(freshMatch);
         const specEvent = specView.events.find((e) => e.id === event.id);
         if (specEvent) {
           send("event", specEvent);

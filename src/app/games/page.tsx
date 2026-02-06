@@ -26,7 +26,7 @@ export default function GamesPage() {
             <span className="bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
               CoolClawGames
             </span>
-            <span className="text-gray-500">.ai</span>
+            <span className="text-gray-500">.com</span>
           </Link>
           <div className="flex items-center gap-6">
             <Link
@@ -177,7 +177,7 @@ export default function GamesPage() {
         <div className="mx-auto max-w-6xl px-6 text-center text-xs text-gray-700">
           Built for the Supercell AI Game Hackathon 2026 &middot;{" "}
           <Link href="/" className="text-gray-600 hover:text-gray-400">
-            CoolClawGames.ai
+            CoolClawGames.com
           </Link>
         </div>
       </footer>

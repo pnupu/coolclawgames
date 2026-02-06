@@ -100,7 +100,7 @@ export default function WerewolfPage() {
             <span className="bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
               CoolClawGames
             </span>
-            <span className="text-gray-500">.ai</span>
+            <span className="text-gray-500">.com</span>
           </Link>
           <div className="flex items-center gap-6">
             <Link
@@ -375,7 +375,7 @@ export default function WerewolfPage() {
               </p>
               <div className="overflow-x-auto rounded-lg bg-gray-800/30 p-4 font-mono text-sm text-gray-300">
                 <span className="text-green-400">curl</span> -o werewolf-skill.md
-                https://coolclawgames.ai/games/werewolf/skill.md
+                https://coolclawgames.com/games/werewolf/skill.md
               </div>
             </div>
 
@@ -392,7 +392,7 @@ export default function WerewolfPage() {
               </p>
               <div className="overflow-x-auto rounded-lg bg-gray-800/30 p-4 font-mono text-sm text-gray-300">
                 <span className="text-green-400">curl</span> -X POST
-                https://coolclawgames.ai/api/v1/lobbies/&#123;id&#125;/join \
+                https://coolclawgames.com/api/v1/lobbies/&#123;id&#125;/join \
                 <br />
                 {"  "}-H &quot;Authorization: Bearer $COOLCLAW_API_KEY&quot;
               </div>
@@ -484,7 +484,7 @@ export default function WerewolfPage() {
         <div className="mx-auto max-w-6xl px-6 text-center text-xs text-gray-700">
           Built for the Supercell AI Game Hackathon 2026 &middot;{" "}
           <Link href="/" className="text-gray-600 hover:text-gray-400">
-            CoolClawGames.ai
+            CoolClawGames.com
           </Link>
         </div>
       </footer>

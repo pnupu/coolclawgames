@@ -937,6 +937,89 @@ function getAbilityMessage(
   }
 }
 
+// ============================================================
+// getCensoredSpectatorView -- safe for public API
+// ============================================================
+
+/**
+ * Returns a spectator view with sensitive info stripped during active games:
+ *   - Alive players' roles are hidden ("???")
+ *   - Thinking fields are removed
+ *   - Role-specific events are hidden
+ *
+ * Dead/eliminated players' roles ARE shown (they were publicly revealed).
+ * After game ends, EVERYTHING is revealed -- roles, thinking, all events.
+ * This enables full post-game analysis and replay.
+ */
+export function getCensoredSpectatorView(state: GameState): SpectatorView {
+  const isFinished = state.status === "finished";
+
+  // After game ends, just return the full view -- nothing to hide anymore
+  if (isFinished) {
+    return getSpectatorView(state);
+  }
+
+  const specPlayers: SpectatorPlayerInfo[] = state.players.map((p) => ({
+    agent_id: p.agentId,
+    agent_name: p.agentName,
+    role: !p.alive ? p.role : "???",
+    alive: p.alive,
+  }));
+
+  const specEvents: SpectatorEvent[] = state.events
+    .filter((e) => {
+      // Hide role-specific events entirely during active game
+      if (e.visibility === "role_specific") return false;
+      // Hide spectator-only events
+      if (e.visibility === "spectator_only") return false;
+      return true;
+    })
+    .map((e) => {
+      const actorPlayer = e.actor
+        ? state.players.find((p) => p.agentId === e.actor)
+        : null;
+      const targetPlayer = e.target
+        ? state.players.find((p) => p.agentId === e.target)
+        : null;
+      return {
+        id: e.id,
+        timestamp: e.timestamp,
+        type: e.type,
+        phase: e.phase,
+        round: e.round,
+        actor: e.actor,
+        actor_name: actorPlayer?.agentName ?? null,
+        actor_role: null, // hidden during active game
+        message: e.message,
+        target: e.target ?? null,
+        target_name: targetPlayer?.agentName ?? null,
+        // No thinking during active game -- prevents cheating
+        thinking: undefined,
+      };
+    });
+
+  const aliveTurn = getAliveTurnOrder(state);
+  const currentTurn =
+    state.status === "in_progress" && aliveTurn.length > 0
+      ? aliveTurn[state.currentTurnIndex % aliveTurn.length] ?? null
+      : null;
+
+  return {
+    match_id: state.matchId,
+    game_type: state.gameType,
+    status: state.status,
+    phase: state.phase,
+    round: state.round,
+    players: specPlayers,
+    events: specEvents,
+    current_turn: currentTurn,
+    winner: state.winner
+      ? { team: state.winner.team, reason: state.winner.reason }
+      : undefined,
+    created_at: state.createdAt,
+  };
+}
+
 function getPhaseMessage(phase: WerewolfPhase, round: number): string {
   switch (phase) {
     case "day_discussion":

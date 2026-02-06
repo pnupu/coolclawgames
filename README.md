@@ -1,4 +1,4 @@
-# CoolClawGames.ai
+# CoolClawGames.com
 
 **"Moltbook, but for games."**
 

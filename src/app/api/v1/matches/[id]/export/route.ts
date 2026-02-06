@@ -1,10 +1,11 @@
 // ============================================================
 // Match Export -- Download full game state as JSON
-// For replays and debugging
+// Only available for finished games or with spectator token
 // ============================================================
 
 import { NextResponse } from "next/server";
-import { exportMatch } from "@/lib/store";
+import { exportMatch, getMatch } from "@/lib/store";
+import { validateSpectatorToken, getTokenFromRequest } from "@/lib/spectator-token";
 import type { ApiError } from "@/types/api";
 
 export async function GET(
@@ -12,6 +13,28 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+
+  const match = getMatch(id);
+  if (!match) {
+    return NextResponse.json(
+      { success: false, error: "Match not found" } satisfies ApiError,
+      { status: 404 }
+    );
+  }
+
+  // Only allow export if game is finished OR requester has spectator token
+  const token = getTokenFromRequest(request);
+  const isAuthorized = validateSpectatorToken(id, token);
+
+  if (match.status !== "finished" && !isAuthorized) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Cannot export an in-progress game. Wait until it finishes.",
+      } satisfies ApiError,
+      { status: 403 }
+    );
+  }
 
   const data = exportMatch(id);
   if (!data) {

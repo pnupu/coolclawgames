@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getMatch } from "@/lib/store";
-import { getSpectatorView } from "@/engine/game-engine";
+import { getSpectatorView, getCensoredSpectatorView } from "@/engine/game-engine";
+import { validateSpectatorToken, getTokenFromRequest } from "@/lib/spectator-token";
 import type { MatchSpectateResponse, ApiError } from "@/types/api";
 
 export async function GET(
@@ -17,9 +18,15 @@ export async function GET(
     );
   }
 
+  // Check for spectator token -- without it, return censored view
+  const token = getTokenFromRequest(request);
+  const isAuthorizedSpectator = validateSpectatorToken(id, token);
+
   const response: MatchSpectateResponse = {
     success: true,
-    state: getSpectatorView(match),
+    state: isAuthorizedSpectator
+      ? getSpectatorView(match)
+      : getCensoredSpectatorView(match),
   };
 
   return NextResponse.json(response);

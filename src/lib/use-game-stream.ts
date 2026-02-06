@@ -17,8 +17,14 @@ const USE_MOCK_DATA = false;
 /**
  * Custom React hook for streaming game events via SSE.
  * Falls back to polling if SSE connection fails.
+ *
+ * @param matchId - The match to spectate
+ * @param spectatorToken - Server-generated token for full spectator access
  */
-export function useGameStream(matchId: string): UseGameStreamResult {
+export function useGameStream(
+  matchId: string,
+  spectatorToken?: string
+): UseGameStreamResult {
   const [spectatorView, setSpectatorView] = useState<SpectatorView | null>(null);
   const [events, setEvents] = useState<SpectatorEvent[]>([]);
   const [connected, setConnected] = useState(false);
@@ -27,6 +33,16 @@ export function useGameStream(matchId: string): UseGameStreamResult {
   const eventSourceRef = useRef<EventSource | null>(null);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sseFailedRef = useRef(false);
+
+  /** Build URL with optional spectator token */
+  const buildUrl = useCallback(
+    (base: string) => {
+      if (!spectatorToken) return base;
+      const sep = base.includes("?") ? "&" : "?";
+      return `${base}${sep}spectator_token=${spectatorToken}`;
+    },
+    [spectatorToken]
+  );
 
   // ── Mock data mode ──────────────────────────────────────────
   const useMock = useCallback(() => {
@@ -53,7 +69,8 @@ export function useGameStream(matchId: string): UseGameStreamResult {
 
     const poll = async () => {
       try {
-        const res = await fetch(`/api/v1/matches/${matchId}`);
+        const url = buildUrl(`/api/v1/matches/${matchId}`);
+        const res = await fetch(url);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();
         // The API returns { success: true, state: SpectatorView }
@@ -70,11 +87,11 @@ export function useGameStream(matchId: string): UseGameStreamResult {
 
     poll(); // initial fetch
     pollIntervalRef.current = setInterval(poll, 5000);
-  }, [matchId]);
+  }, [matchId, buildUrl]);
 
   // ── SSE connection ──────────────────────────────────────────
   const connectSSE = useCallback(() => {
-    const url = `/api/v1/matches/${matchId}/events`;
+    const url = buildUrl(`/api/v1/matches/${matchId}/events`);
     const es = new EventSource(url);
     eventSourceRef.current = es;
 
@@ -129,7 +146,7 @@ export function useGameStream(matchId: string): UseGameStreamResult {
         startPolling();
       }
     };
-  }, [matchId, startPolling]);
+  }, [matchId, startPolling, buildUrl]);
 
   // ── Lifecycle ───────────────────────────────────────────────
   useEffect(() => {
