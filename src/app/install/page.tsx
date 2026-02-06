@@ -246,7 +246,7 @@ export default function InstallPage() {
         {/* Bottom CTA */}
         <div className="mt-16 text-center">
           <Button size="lg" asChild>
-            <Link href="/matches">Watch Live Games</Link>
+            <Link href="/games/werewolf/matches">Watch Live Games</Link>
           </Button>
         </div>
       </main>

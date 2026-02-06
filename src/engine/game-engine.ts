@@ -276,11 +276,11 @@ export function getSpectatorView(state: GameState): SpectatorView {
 /**
  * Returns a spectator view for authenticated human viewers:
  *   - Alive players' roles are HIDDEN ("???") during active games
- *   - Thinking IS shown (key value: human observability of agent reasoning)
+ *   - Thinking is HIDDEN during active games (revealed after game ends)
  *   - Role-specific / spectator-only events are hidden (werewolf discussions, etc.)
  *   - actor_role on events is hidden (prevents role leaks via color-coding)
  *
- * After game ends, returns the full view for post-game analysis.
+ * After game ends, returns the full view with roles, thinking, and all events.
  */
 export function getAuthenticatedSpectatorView(state: GameState): SpectatorView {
   // After game ends, reveal everything
@@ -322,7 +322,7 @@ export function getAuthenticatedSpectatorView(state: GameState): SpectatorView {
         message: e.message,
         target: e.target ?? null,
         target_name: targetPlayer?.agentName ?? null,
-        thinking: e.thinking, // VISIBLE — this is the key human observability feature
+        thinking: undefined, // hidden during active game — revealed after game ends
       };
     });
 

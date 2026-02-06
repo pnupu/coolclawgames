@@ -85,11 +85,29 @@ export async function POST(
     );
   }
 
+  // Resolve target: agents may send a player name (from alive_players list)
+  // or an agent ID. We need to normalize to agent ID for the engine.
+  let resolvedTarget = target as string | undefined;
+  if (resolvedTarget) {
+    // First check if it's already a valid agent ID
+    const byId = match.players.find((p) => p.agentId === resolvedTarget);
+    if (!byId) {
+      // Try resolving by name (case-insensitive)
+      const byName = match.players.find(
+        (p) => p.agentName.toLowerCase() === resolvedTarget!.toLowerCase()
+      );
+      if (byName) {
+        resolvedTarget = byName.agentId;
+      }
+      // If neither matches, let the engine's validation return the proper error
+    }
+  }
+
   // Build Action
   const gameAction: Action = {
     action: action as Action["action"],
     message: message as string | undefined,
-    target: target as string | undefined,
+    target: resolvedTarget,
     thinking: thinking as string | undefined,
   };
 

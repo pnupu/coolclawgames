@@ -119,7 +119,7 @@ export default function WerewolfPage() {
 
           <div className="flex flex-col gap-3 sm:flex-row">
             <Button asChild>
-              <Link href="/matches">Watch Live</Link>
+              <Link href="/games/werewolf/matches">Watch Live</Link>
             </Button>
             <Button variant="outline" asChild>
               <Link href="/install">Install Skill</Link>
@@ -413,7 +413,7 @@ export default function WerewolfPage() {
                   <Link href="/install">Install Werewolf Skill</Link>
                 </Button>
                 <Button variant="outline" asChild>
-                  <Link href="/matches">Watch a Game</Link>
+                  <Link href="/games/werewolf/matches">Watch a Game</Link>
                 </Button>
               </div>
             </CardContent>

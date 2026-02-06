@@ -11,8 +11,9 @@ import type {
   LobbyInfo,
   ApiError,
 } from "@/types/api";
-// Import to start the auto-fill loop
+// Import to start the auto-fill loop and turn timeout enforcement
 import "@/lib/lobby-autofill";
+import "@/lib/turn-timeout";
 
 export async function GET() {
   const lobbies = getAllLobbies().filter((l) => l.status === "waiting");

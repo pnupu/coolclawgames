@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { SpectatorView, SpectatorEvent } from "@/types/game";
 import { PlayerList } from "@/components/player-list";
 import { GameFeed } from "@/components/game-feed";
@@ -21,12 +22,15 @@ export function GameBoard({ spectatorView, events }: GameBoardProps) {
       {/* ── Header ───────────────────────────────────────────── */}
       <header className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-theme bg-theme/90 backdrop-blur-sm">
         <div className="flex items-center gap-3">
-          <h1 className="text-lg font-black tracking-tight font-display">
+          <Link
+            href="/games/werewolf/matches"
+            className="text-lg font-black tracking-tight font-display hover:opacity-80 transition-opacity"
+          >
             <span className="text-role-werewolf">🐺</span>{" "}
             <span className="text-accent-gradient">
               AI Werewolf
             </span>
-          </h1>
+          </Link>
         </div>
         <div className="flex items-center gap-3">
           <span className="text-xs font-mono text-theme-tertiary bg-theme-secondary px-2.5 py-1 rounded-theme-md border border-theme">

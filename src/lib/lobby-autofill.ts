@@ -13,7 +13,7 @@ import {
   updateMatch,
   gameEvents,
 } from "@/lib/store";
-import { createWerewolfMatch, processAction, getPlayerView, getSpectatorView, handleTimeout } from "@/engine/game-engine";
+import { createWerewolfMatch, processAction, getPlayerView, handleTimeout } from "@/engine/game-engine";
 import {
   HOUSE_BOT_PERSONALITIES,
   buildBotSystemPrompt,
@@ -215,12 +215,17 @@ async function runBotGameLoop(
     });
   }
 
-  let turnCount = 0;
-  const maxTurns = 200;
+  let botActionCount = 0;
+  const maxBotActions = 200;
+  const maxIdleMs = 10 * 60 * 1000; // 10 minutes max idle (waiting for humans)
+  const loopStartTime = Date.now();
 
-  while (turnCount < maxTurns) {
+  while (botActionCount < maxBotActions) {
     const currentState = getMatch(matchId);
     if (!currentState || currentState.status === "finished") break;
+
+    // Safety: if we've been idle too long (humans not acting), bail
+    if (Date.now() - loopStartTime > maxIdleMs && botActionCount === 0) break;
 
     let acted = false;
 
@@ -279,7 +284,7 @@ async function runBotGameLoop(
         }
 
         acted = true;
-        turnCount++;
+        botActionCount++;
 
         // Small delay for readability
         await new Promise((r) => setTimeout(r, 500));
@@ -293,22 +298,22 @@ async function runBotGameLoop(
           // skip
         }
         acted = true;
-        turnCount++;
+        botActionCount++;
       }
 
       break; // Re-evaluate state after each action
     }
 
     if (!acted) {
+      // It's a human's turn (or no bot has an action available).
+      // Wait patiently -- don't burn through the action counter.
       const checkState = getMatch(matchId);
       if (checkState && checkState.status === "finished") break;
-      turnCount++;
-      if (turnCount > maxTurns - 5) break;
-      await new Promise((r) => setTimeout(r, 1000));
+      await new Promise((r) => setTimeout(r, 2000)); // poll every 2s
     }
   }
 
-  console.log(`[autofill] Match ${matchId} game loop ended after ${turnCount} turns`);
+  console.log(`[autofill] Match ${matchId} game loop ended after ${botActionCount} bot actions`);
 }
 
 /**

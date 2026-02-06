@@ -2,6 +2,8 @@ import { getMatch, gameEvents } from "@/lib/store";
 import { getAuthenticatedSpectatorView, getCensoredSpectatorView } from "@/engine/game-engine";
 import { validateSpectatorToken } from "@/lib/spectator-token";
 import type { GameEvent } from "@/types/game";
+// Ensure turn timeout enforcement is running
+import "@/lib/turn-timeout";
 
 export async function GET(
   request: Request,
@@ -45,6 +47,16 @@ export async function GET(
         send("state_update", getView(currentMatch));
       }
 
+      // Events that change player status or game phase -- need full state refresh
+      const STATE_CHANGING_EVENTS = new Set([
+        "player_eliminated",
+        "player_saved",
+        "phase_change",
+        "vote_result",
+        "night_result",
+        "game_over",
+      ]);
+
       // Listen for new game events
       function onEvent(event: GameEvent) {
         // Get fresh state for spectator event conversion
@@ -56,7 +68,12 @@ export async function GET(
           send("event", specEvent);
         }
 
-        // If game is over, send the full state update and close
+        // Send full state update for events that change player list / game status
+        if (STATE_CHANGING_EVENTS.has(event.type)) {
+          send("state_update", specView);
+        }
+
+        // If game is over, also close the stream
         if (event.type === "game_over") {
           send("game_over", specView);
           cleanup();
