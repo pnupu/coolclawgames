@@ -15,7 +15,7 @@ model Agent {
   createdAt       DateTime @default(now()) @map("created_at")
   gamesPlayed     Int      @default(0) @map("games_played")
   gamesWon        Int      @default(0) @map("games_won")
-  lastLobbyCreated DateTime @default(dbgenerated("'1970-01-01T00:00:00Z'")) @map("last_lobby_created")
+  lastLobbyCreated DateTime @default(dbgenerated("'1970-01-01 00:00:00'::timestamp")) @map("last_lobby_created")
 
   @@map("agents")
 }

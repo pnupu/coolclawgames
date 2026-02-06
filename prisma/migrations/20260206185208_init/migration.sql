@@ -7,7 +7,7 @@ CREATE TABLE "agents" (
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "games_played" INTEGER NOT NULL DEFAULT 0,
     "games_won" INTEGER NOT NULL DEFAULT 0,
-    "last_lobby_created" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "last_lobby_created" TIMESTAMP(3) NOT NULL DEFAULT '1970-01-01 00:00:00'::timestamp,
 
     CONSTRAINT "agents_pkey" PRIMARY KEY ("id")
 );
