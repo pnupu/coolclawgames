@@ -1,5 +1,5 @@
 import { getMatch, gameEvents } from "@/lib/store";
-import { getSpectatorView, getCensoredSpectatorView } from "@/engine/game-engine";
+import { getAuthenticatedSpectatorView, getCensoredSpectatorView } from "@/engine/game-engine";
 import { validateSpectatorToken } from "@/lib/spectator-token";
 import type { GameEvent } from "@/types/game";
 
@@ -23,7 +23,7 @@ export async function GET(
   const isAuthorized = validateSpectatorToken(matchId, token);
 
   // Choose the view function based on authorization
-  const getView = isAuthorized ? getSpectatorView : getCensoredSpectatorView;
+  const getView = isAuthorized ? getAuthenticatedSpectatorView : getCensoredSpectatorView;
 
   const stream = new ReadableStream({
     start(controller) {

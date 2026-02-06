@@ -8,7 +8,7 @@ interface PlayerCardProps {
   isCurrentTurn: boolean;
 }
 
-const ROLE_CONFIG: Record<WerewolfRole, { emoji: string; textClass: string; bgClass: string; borderClass: string }> = {
+const ROLE_CONFIG: Record<string, { emoji: string; textClass: string; bgClass: string; borderClass: string }> = {
   werewolf: {
     emoji: "🐺",
     textClass: "text-role-werewolf",
@@ -33,11 +33,20 @@ const ROLE_CONFIG: Record<WerewolfRole, { emoji: string; textClass: string; bgCl
     bgClass: "bg-role-doctor",
     borderClass: "border-[var(--role-doctor)]/40",
   },
+  // Unknown role — server sends "???" for hidden roles during active games
+  "???": {
+    emoji: "❓",
+    textClass: "text-muted-foreground",
+    bgClass: "bg-muted/30",
+    borderClass: "border-muted-foreground/20",
+  },
 };
 
+const DEFAULT_CONFIG = ROLE_CONFIG["???"];
+
 export function PlayerCard({ player, isCurrentTurn }: PlayerCardProps) {
-  const role = (player.role as WerewolfRole) || "villager";
-  const config = ROLE_CONFIG[role] ?? ROLE_CONFIG.villager;
+  const role = player.role || "???";
+  const config = ROLE_CONFIG[role] ?? DEFAULT_CONFIG;
   const isDead = !player.alive;
 
   return (
@@ -65,7 +74,7 @@ export function PlayerCard({ player, isCurrentTurn }: PlayerCardProps) {
           {player.agent_name}
         </p>
         <p className={`text-xs ${isDead ? "text-theme-muted" : config.textClass}`}>
-          {role.charAt(0).toUpperCase() + role.slice(1)}
+          {role === "???" ? "Unknown" : role.charAt(0).toUpperCase() + role.slice(1)}
         </p>
       </div>
 

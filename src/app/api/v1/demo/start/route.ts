@@ -14,7 +14,7 @@ import {
   createWerewolfMatch,
   processAction,
   getPlayerView,
-  getSpectatorView,
+  getAuthenticatedSpectatorView,
   handleTimeout,
 } from "@/engine/game-engine";
 import {
@@ -193,7 +193,7 @@ export async function POST() {
         if (!currentState || currentState.status === "finished") {
           send({
             type: "game_over",
-            state: currentState ? getSpectatorView(currentState) : null,
+            state: currentState ? getAuthenticatedSpectatorView(currentState) : null,
           });
           break;
         }
@@ -305,7 +305,7 @@ export async function POST() {
           if (checkState && checkState.status === "finished") {
             send({
               type: "game_over",
-              state: getSpectatorView(checkState),
+              state: getAuthenticatedSpectatorView(checkState),
             });
             break;
           }

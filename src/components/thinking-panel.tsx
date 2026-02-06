@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import type { SpectatorEvent } from "@/types/game";
-import type { WerewolfRole } from "@/types/werewolf";
 
 interface ThinkingPanelProps {
   events: SpectatorEvent[];
@@ -57,8 +56,9 @@ export function ThinkingPanel({ events }: ThinkingPanelProps) {
             <p className="text-xs text-theme-muted py-2">No agent thoughts yet…</p>
           )}
           {thoughts.map((t) => {
-            const role = (t.actor_role ?? "villager") as WerewolfRole;
-            const colorClass = ROLE_TEXT_CLASSES[role] ?? "text-theme-secondary";
+            // Server sends actor_role: null when roles are hidden during active games
+            const role = t.actor_role;
+            const colorClass = role ? (ROLE_TEXT_CLASSES[role] ?? "text-theme-secondary") : "text-theme-secondary";
             return (
               <div
                 key={t.id}
@@ -66,9 +66,11 @@ export function ThinkingPanel({ events }: ThinkingPanelProps) {
               >
                 <div className="flex items-center gap-2 mb-0.5">
                   <span className={`text-xs font-bold ${colorClass} font-display`}>{t.actor_name}</span>
-                  <span className="text-[10px] text-theme-muted">
-                    {role.charAt(0).toUpperCase() + role.slice(1)}
-                  </span>
+                  {role && (
+                    <span className="text-[10px] text-theme-muted">
+                      {role.charAt(0).toUpperCase() + role.slice(1)}
+                    </span>
+                  )}
                 </div>
                 <p className="text-xs text-theme-secondary italic leading-relaxed">
                   &ldquo;{t.thinking}&rdquo;

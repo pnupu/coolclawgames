@@ -209,11 +209,12 @@ export function getPlayerView(
 }
 
 // ============================================================
-// getSpectatorView
+// getSpectatorView  (full view — only safe AFTER game ends)
 // ============================================================
 
 /**
  * Returns the full spectator view with all info visible.
+ * Should ONLY be called for finished games or internal use.
  */
 export function getSpectatorView(state: GameState): SpectatorView {
   const specPlayers: SpectatorPlayerInfo[] = state.players.map((p) => ({
@@ -245,6 +246,85 @@ export function getSpectatorView(state: GameState): SpectatorView {
       thinking: e.thinking,
     };
   });
+
+  const aliveTurn = getAliveTurnOrder(state);
+  const currentTurn =
+    state.status === "in_progress" && aliveTurn.length > 0
+      ? aliveTurn[state.currentTurnIndex % aliveTurn.length] ?? null
+      : null;
+
+  return {
+    match_id: state.matchId,
+    game_type: state.gameType,
+    status: state.status,
+    phase: state.phase,
+    round: state.round,
+    players: specPlayers,
+    events: specEvents,
+    current_turn: currentTurn,
+    winner: state.winner
+      ? { team: state.winner.team, reason: state.winner.reason }
+      : undefined,
+    created_at: state.createdAt,
+  };
+}
+
+// ============================================================
+// getAuthenticatedSpectatorView  (token holders during active game)
+// ============================================================
+
+/**
+ * Returns a spectator view for authenticated human viewers:
+ *   - Alive players' roles are HIDDEN ("???") during active games
+ *   - Thinking IS shown (key value: human observability of agent reasoning)
+ *   - Role-specific / spectator-only events are hidden (werewolf discussions, etc.)
+ *   - actor_role on events is hidden (prevents role leaks via color-coding)
+ *
+ * After game ends, returns the full view for post-game analysis.
+ */
+export function getAuthenticatedSpectatorView(state: GameState): SpectatorView {
+  // After game ends, reveal everything
+  if (state.status === "finished") {
+    return getSpectatorView(state);
+  }
+
+  const specPlayers: SpectatorPlayerInfo[] = state.players.map((p) => ({
+    agent_id: p.agentId,
+    agent_name: p.agentName,
+    role: !p.alive ? p.role : "???",
+    alive: p.alive,
+  }));
+
+  const specEvents: SpectatorEvent[] = state.events
+    .filter((e) => {
+      // Hide role-specific events (werewolf chat, seer results, etc.)
+      if (e.visibility === "role_specific") return false;
+      // Hide spectator-only events during active game
+      if (e.visibility === "spectator_only") return false;
+      return true;
+    })
+    .map((e) => {
+      const actorPlayer = e.actor
+        ? state.players.find((p) => p.agentId === e.actor)
+        : null;
+      const targetPlayer = e.target
+        ? state.players.find((p) => p.agentId === e.target)
+        : null;
+      return {
+        id: e.id,
+        timestamp: e.timestamp,
+        type: e.type,
+        phase: e.phase,
+        round: e.round,
+        actor: e.actor,
+        actor_name: actorPlayer?.agentName ?? null,
+        actor_role: null, // hidden during active game — prevents role leak
+        message: e.message,
+        target: e.target ?? null,
+        target_name: targetPlayer?.agentName ?? null,
+        thinking: e.thinking, // VISIBLE — this is the key human observability feature
+      };
+    });
 
   const aliveTurn = getAliveTurnOrder(state);
   const currentTurn =

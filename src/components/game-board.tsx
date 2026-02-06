@@ -13,7 +13,8 @@ interface GameBoardProps {
 }
 
 export function GameBoard({ spectatorView, events }: GameBoardProps) {
-  const { match_id, phase, round, players, current_turn } = spectatorView;
+  const { match_id, status, phase, round, players, current_turn } = spectatorView;
+  const isFinished = status === "finished";
 
   return (
     <div className="flex flex-col h-screen bg-theme text-theme-primary font-body">
@@ -31,13 +32,22 @@ export function GameBoard({ spectatorView, events }: GameBoardProps) {
           <span className="text-xs font-mono text-theme-tertiary bg-theme-secondary px-2.5 py-1 rounded-theme-md border border-theme">
             {match_id}
           </span>
-          <span className="flex items-center gap-1.5 text-xs text-success">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--success)] opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--success)]" />
+          {!isFinished ? (
+            <span className="flex items-center gap-1.5 text-xs text-success">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--success)] opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--success)]" />
+              </span>
+              LIVE
             </span>
-            LIVE
-          </span>
+          ) : (
+            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span className="relative flex h-2 w-2">
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-muted-foreground" />
+              </span>
+              FINISHED
+            </span>
+          )}
         </div>
       </header>
 

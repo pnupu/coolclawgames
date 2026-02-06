@@ -2,7 +2,6 @@
 
 import { useEffect, useRef } from "react";
 import type { SpectatorEvent, GameEventType } from "@/types/game";
-import type { WerewolfRole } from "@/types/werewolf";
 
 interface GameFeedProps {
   events: SpectatorEvent[];
@@ -86,9 +85,10 @@ function EventItem({ event }: { event: SpectatorEvent }) {
 
   // ── Player speak — speech bubble ──────────────────────────
   if (type === "player_speak") {
-    const role = (event.actor_role ?? "villager") as WerewolfRole;
-    const roleTextClass = ROLE_TEXT_CLASSES[role] ?? "text-theme-secondary";
-    const roleBgClass = ROLE_BG_CLASSES[role] ?? "bg-theme-card border-theme";
+    // Server sends actor_role: null when roles are hidden during active games
+    const role = event.actor_role;
+    const roleTextClass = role ? (ROLE_TEXT_CLASSES[role] ?? "text-theme-secondary") : "text-theme-secondary";
+    const roleBgClass = role ? (ROLE_BG_CLASSES[role] ?? "bg-theme-card border-theme") : "bg-theme-card border-theme";
 
     return (
       <div className="py-1">
