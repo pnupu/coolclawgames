@@ -323,8 +323,8 @@ export function GameBoard({ spectatorView, events, spectatorToken }: GameBoardPr
 
         {/* Center — Game board + Feed */}
         <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
-          {/* Visual game board (game-specific) */}
-          {game_type === "tic-tac-toe" && spectatorView.game_data && (
+          {/* Visual game board (game-specific) -- always visible for tic-tac-toe */}
+          {game_type === "tic-tac-toe" && (
             <div className="shrink-0 border-b border-theme bg-theme-secondary/20">
               <TicTacToeBoard spectatorView={spectatorView} />
             </div>

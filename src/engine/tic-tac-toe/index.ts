@@ -36,6 +36,12 @@ const MAX_BEST_OF = 9;
 /** Safety cap: max total games (including draws) before forcing a result */
 const MAX_TOTAL_GAMES_FACTOR = 2;
 
+interface CompletedGame {
+  board: Array<Mark | null>;
+  winner: Mark | "draw" | null;
+  winLine: number[] | null;
+}
+
 interface TttPhaseData {
   board: Array<Mark | null>;
   marksByPlayer: Record<string, Mark>;
@@ -48,6 +54,8 @@ interface TttPhaseData {
   gamesPlayed: number;
   /** Who started the current game (player index into turnOrder) */
   gameStarterIndex: number;
+  /** History of completed game boards in this series */
+  gameHistory: CompletedGame[];
 }
 
 const TTT_DEFINITION: GameTypeDefinition = {
@@ -153,6 +161,7 @@ export const TicTacToeGame: GameImplementation = {
       seriesScore: { X: 0, O: 0 },
       gamesPlayed: 0,
       gameStarterIndex: 0,
+      gameHistory: [],
     };
 
     return {
@@ -284,6 +293,11 @@ export const TicTacToeGame: GameImplementation = {
       best_of: phaseData.bestOf,
       games_played: phaseData.gamesPlayed,
       win_line: winLine, // [0,1,2] indices or null
+      game_history: phaseData.gameHistory.map((g) => ({
+        board: g.board,
+        winner: g.winner,
+        win_line: g.winLine,
+      })),
     };
 
     return {
@@ -484,7 +498,8 @@ function getPhaseData(state: GameState): TttPhaseData {
   const seriesScore = (state.phaseData.seriesScore as Record<string, number>) ?? { X: 0, O: 0 };
   const gamesPlayed = (state.phaseData.gamesPlayed as number) ?? 0;
   const gameStarterIndex = (state.phaseData.gameStarterIndex as number) ?? 0;
-  return { board, marksByPlayer, moveCount, bestOf, seriesScore, gamesPlayed, gameStarterIndex };
+  const gameHistory = (state.phaseData.gameHistory as CompletedGame[]) ?? [];
+  return { board, marksByPlayer, moveCount, bestOf, seriesScore, gamesPlayed, gameStarterIndex, gameHistory };
 }
 
 function formatBoard(board: Array<Mark | null>): string {
@@ -548,7 +563,15 @@ function handleBoardResult(
   winnerMark: Mark | null,
   board: Array<Mark | null>,
 ): GameState {
-  const { bestOf, seriesScore, gamesPlayed, marksByPlayer, gameStarterIndex } = phaseData;
+  const { bestOf, seriesScore, gamesPlayed, marksByPlayer, gameStarterIndex, gameHistory } = phaseData;
+
+  // Save this completed game to history
+  const completedGame: CompletedGame = {
+    board: [...board],
+    winner: winnerMark ?? "draw",
+    winLine: findWinLine(board),
+  };
+  const newHistory = [...gameHistory, completedGame];
   const newGamesPlayed = gamesPlayed + 1;
   const newScore = { ...seriesScore };
   const winsNeeded = Math.ceil(bestOf / 2);
@@ -584,6 +607,7 @@ function handleBoardResult(
         board,
         seriesScore: newScore,
         gamesPlayed: newGamesPlayed,
+        gameHistory: newHistory,
       },
     };
 
@@ -625,6 +649,7 @@ function handleBoardResult(
         board,
         seriesScore: newScore,
         gamesPlayed: newGamesPlayed,
+        gameHistory: newHistory,
       },
     };
 

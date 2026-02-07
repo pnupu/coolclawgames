@@ -1,10 +1,16 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import type { SpectatorView } from "@/types/game";
 
 interface TicTacToeBoardProps {
   spectatorView: SpectatorView;
+}
+
+interface HistoryGame {
+  board: Array<string | null>;
+  winner: string | null;
+  win_line: number[] | null;
 }
 
 const ROW_LABELS = ["A", "B", "C"];
@@ -45,43 +51,149 @@ function OMark({ isWinning, size = "normal" }: { isWinning: boolean; size?: "sma
   );
 }
 
+function BoardGrid({
+  board,
+  winLine,
+  lastMoveIndex,
+}: {
+  board: Array<string | null>;
+  winLine: number[] | null;
+  lastMoveIndex: number;
+}) {
+  const winSet = useMemo(() => new Set(winLine ?? []), [winLine]);
+
+  return (
+    <div className="flex items-start gap-0">
+      {/* Row labels */}
+      <div className="flex flex-col mt-8 mr-2">
+        {ROW_LABELS.map((label) => (
+          <div key={label} className="h-[72px] sm:h-[88px] flex items-center justify-center">
+            <span className="text-xs font-mono font-bold text-theme-tertiary">{label}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex flex-col items-center">
+        {/* Column labels */}
+        <div className="flex mb-1">
+          {COL_LABELS.map((label) => (
+            <div key={label} className="w-[72px] sm:w-[88px] flex items-center justify-center">
+              <span className="text-xs font-mono font-bold text-theme-tertiary">{label}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* The grid */}
+        <div className="grid grid-cols-3 gap-[3px] bg-theme-tertiary/60 p-[3px] rounded-lg">
+          {board.map((cell, i) => {
+            const isWin = winSet.has(i);
+            const isLastMove = i === lastMoveIndex;
+            return (
+              <div
+                key={i}
+                className={`
+                  w-[68px] h-[68px] sm:w-[84px] sm:h-[84px] flex items-center justify-center rounded-md
+                  transition-all duration-300 relative
+                  ${isWin
+                    ? "bg-[var(--claw-red)]/20 ring-2 ring-[var(--claw-red)]/60 shadow-lg"
+                    : isLastMove && cell
+                      ? "bg-[var(--claw-amber)]/10 ring-1 ring-[var(--claw-amber)]/40"
+                      : cell
+                        ? "bg-[oklch(0.25_0.01_250)]"
+                        : "bg-[oklch(0.20_0.005_250)]"
+                  }
+                `}
+              >
+                <div className="w-11 h-11 sm:w-14 sm:h-14">
+                  {cell === "X" && <XMark isWinning={isWin} />}
+                  {cell === "O" && <OMark isWinning={isWin} />}
+                </div>
+                {/* Empty cell dot */}
+                {!cell && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-1.5 h-1.5 rounded-full bg-theme-tertiary/30" />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function TicTacToeBoard({ spectatorView }: TicTacToeBoardProps) {
   const gameData = spectatorView.game_data;
   if (!gameData) return null;
 
-  const board = (gameData.board as Array<string | null>) ?? Array(9).fill(null);
-  const winLine = (gameData.win_line as number[] | null) ?? null;
+  const currentBoard = (gameData.board as Array<string | null>) ?? Array(9).fill(null);
+  const currentWinLine = (gameData.win_line as number[] | null) ?? null;
   const seriesScore = (gameData.series_score as Record<string, number>) ?? { X: 0, O: 0 };
   const bestOf = (gameData.best_of as number) ?? 1;
   const gamesPlayed = (gameData.games_played as number) ?? 0;
   const marksByPlayer = (gameData.marks_by_player as Record<string, string>) ?? {};
+  const gameHistory = (gameData.game_history as HistoryGame[]) ?? [];
 
-  const winSet = useMemo(() => new Set(winLine ?? []), [winLine]);
+  const isFinished = spectatorView.status === "finished";
+
+  // Total games: completed history + current game (if in progress or just finished this game)
+  const totalGames = isFinished ? gameHistory.length : gameHistory.length + 1;
+  const currentGameIndex = totalGames - 1;
+
+  // Selected game tab -- default to the latest game
+  const [selectedGame, setSelectedGame] = useState(currentGameIndex);
+
+  // Auto-advance to latest game when new games start
+  useEffect(() => {
+    setSelectedGame(currentGameIndex);
+  }, [currentGameIndex]);
+
+  // Determine what board/winLine to show based on selected tab
+  const isViewingCurrentGame = selectedGame === currentGameIndex && !isFinished;
+  const isViewingHistoryGame = selectedGame < gameHistory.length;
+
+  let displayBoard: Array<string | null>;
+  let displayWinLine: number[] | null;
+  let gameLabel: string;
+
+  if (isViewingHistoryGame) {
+    // Viewing a completed game from history
+    const histGame = gameHistory[selectedGame];
+    displayBoard = histGame.board;
+    displayWinLine = histGame.win_line;
+    const winner = histGame.winner;
+    gameLabel = winner === "draw" ? "Draw" : `${winner} won`;
+  } else {
+    // Viewing the current/live game
+    displayBoard = currentBoard;
+    displayWinLine = currentWinLine;
+    gameLabel = isFinished ? "Final" : "Live";
+  }
 
   // Find player names by mark
   const xPlayer = Object.entries(marksByPlayer).find(([, m]) => m === "X")?.[0];
   const oPlayer = Object.entries(marksByPlayer).find(([, m]) => m === "O")?.[0];
 
-  // Find current turn player
+  // Find current turn player (only for current live game)
   const currentTurnPlayer = spectatorView.players.find(
     (p) => p.agent_id === spectatorView.current_turn
   );
   const currentMark = currentTurnPlayer ? marksByPlayer[currentTurnPlayer.agent_name] : null;
 
-  const isFinished = spectatorView.status === "finished";
-
-  // Find the last placed move (most recent player_ability event)
+  // Find the last placed move (for current game only)
   const lastMoveIndex = useMemo(() => {
+    if (!isViewingCurrentGame && !(!isViewingHistoryGame && isFinished)) return -1;
     const abilities = spectatorView.events.filter((e) => e.type === "player_ability");
     if (abilities.length === 0) return -1;
     const last = abilities[abilities.length - 1];
     const match = last.message.match(/on ([A-C][1-3])/);
     if (!match) return -1;
     const cell = match[1];
-    const row = cell.charCodeAt(0) - 65; // A=0, B=1, C=2
+    const row = cell.charCodeAt(0) - 65;
     const col = parseInt(cell[1]) - 1;
     return row * 3 + col;
-  }, [spectatorView.events]);
+  }, [spectatorView.events, isViewingCurrentGame, isViewingHistoryGame, isFinished]);
 
   return (
     <div className="flex flex-col items-center gap-3 py-4 px-2">
@@ -95,7 +207,7 @@ export function TicTacToeBoard({ spectatorView }: TicTacToeBoardProps) {
           </div>
           <div className="flex flex-col items-center">
             <span className="text-theme-tertiary text-[10px] uppercase tracking-wider font-semibold">
-              Game {gamesPlayed + (isFinished ? 0 : 1)} of {bestOf}
+              {isFinished ? "Final" : `Game ${gamesPlayed + 1} of ${bestOf}`}
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -106,67 +218,51 @@ export function TicTacToeBoard({ spectatorView }: TicTacToeBoardProps) {
         </div>
       )}
 
-      {/* Board with row/col labels */}
-      <div className="flex items-start gap-0">
-        {/* Row labels */}
-        <div className="flex flex-col mt-8 mr-2">
-          {ROW_LABELS.map((label) => (
-            <div key={label} className="h-[72px] sm:h-[88px] flex items-center justify-center">
-              <span className="text-xs font-mono font-bold text-theme-tertiary">{label}</span>
-            </div>
-          ))}
+      {/* Game switcher tabs (only for series with multiple games) */}
+      {bestOf > 1 && totalGames > 0 && (
+        <div className="flex items-center gap-1">
+          {Array.from({ length: totalGames }, (_, i) => {
+            const isSelected = i === selectedGame;
+            const isHistorical = i < gameHistory.length;
+            const histGame = isHistorical ? gameHistory[i] : null;
+            const tabWinner = histGame?.winner;
+
+            return (
+              <button
+                key={i}
+                onClick={() => setSelectedGame(i)}
+                className={`
+                  px-3 py-1 text-xs font-bold rounded-theme-sm transition-all cursor-pointer
+                  ${isSelected
+                    ? "bg-[var(--claw-blue)] text-white shadow-md"
+                    : "bg-theme-secondary/60 text-theme-secondary hover:bg-theme-secondary hover:text-theme-primary"
+                  }
+                `}
+              >
+                <span>Game {i + 1}</span>
+                {isHistorical && tabWinner && (
+                  <span className="ml-1 opacity-70">
+                    {tabWinner === "draw" ? "=" : tabWinner === "X" ? "X" : "O"}
+                  </span>
+                )}
+                {!isHistorical && !isFinished && (
+                  <span className="ml-1 text-[var(--success)] opacity-80">&#x25CF;</span>
+                )}
+              </button>
+            );
+          })}
         </div>
+      )}
 
-        <div className="flex flex-col items-center">
-          {/* Column labels */}
-          <div className="flex mb-1">
-            {COL_LABELS.map((label) => (
-              <div key={label} className="w-[72px] sm:w-[88px] flex items-center justify-center">
-                <span className="text-xs font-mono font-bold text-theme-tertiary">{label}</span>
-              </div>
-            ))}
-          </div>
+      {/* Board */}
+      <BoardGrid
+        board={displayBoard}
+        winLine={displayWinLine}
+        lastMoveIndex={isViewingCurrentGame || (!isViewingHistoryGame && isFinished) ? lastMoveIndex : -1}
+      />
 
-          {/* The grid */}
-          <div className="grid grid-cols-3 gap-[3px] bg-theme-tertiary/60 p-[3px] rounded-lg">
-            {board.map((cell, i) => {
-              const isWin = winSet.has(i);
-              const isLastMove = i === lastMoveIndex;
-              return (
-                <div
-                  key={i}
-                  className={`
-                    w-[68px] h-[68px] sm:w-[84px] sm:h-[84px] flex items-center justify-center rounded-md
-                    transition-all duration-300 relative
-                    ${isWin
-                      ? "bg-[var(--claw-red)]/20 ring-2 ring-[var(--claw-red)]/60 shadow-lg"
-                      : isLastMove && cell
-                        ? "bg-[var(--claw-amber)]/10 ring-1 ring-[var(--claw-amber)]/40"
-                        : cell
-                          ? "bg-[oklch(0.25_0.01_250)]"
-                          : "bg-[oklch(0.20_0.005_250)]"
-                    }
-                  `}
-                >
-                  <div className="w-11 h-11 sm:w-14 sm:h-14">
-                    {cell === "X" && <XMark isWinning={isWin} />}
-                    {cell === "O" && <OMark isWinning={isWin} />}
-                  </div>
-                  {/* Empty cell dot */}
-                  {!cell && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-1.5 h-1.5 rounded-full bg-theme-tertiary/30" />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Turn indicator */}
-      {!isFinished && currentTurnPlayer && (
+      {/* Status below the board */}
+      {isViewingCurrentGame && currentTurnPlayer && (
         <div className="flex items-center gap-2 text-sm text-theme-secondary mt-1">
           <div className="w-5 h-5">
             {currentMark === "X" ? <XMark isWinning={false} size="small" /> : <OMark isWinning={false} size="small" />}
@@ -182,8 +278,24 @@ export function TicTacToeBoard({ spectatorView }: TicTacToeBoardProps) {
         </div>
       )}
 
-      {/* Winner banner */}
-      {isFinished && spectatorView.winner && (
+      {/* Historical game result label */}
+      {isViewingHistoryGame && (
+        <div className="text-xs font-semibold text-theme-tertiary mt-1">
+          {gameLabel}
+        </div>
+      )}
+
+      {/* Winner banner (when viewing final state) */}
+      {isFinished && !isViewingHistoryGame && spectatorView.winner && (
+        <div className="bg-[var(--warning)]/20 border border-[var(--warning)]/40 rounded-lg px-5 py-2.5 text-center mt-1">
+          <span className="text-warning font-bold font-display text-sm">
+            {spectatorView.winner.reason}
+          </span>
+        </div>
+      )}
+
+      {/* Winner banner when viewing a historical game that was the series decider */}
+      {isFinished && isViewingHistoryGame && selectedGame === gameHistory.length - 1 && spectatorView.winner && (
         <div className="bg-[var(--warning)]/20 border border-[var(--warning)]/40 rounded-lg px-5 py-2.5 text-center mt-1">
           <span className="text-warning font-bold font-display text-sm">
             {spectatorView.winner.reason}
