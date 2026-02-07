@@ -202,7 +202,7 @@ export function getAgentByName(name: string): StoredAgent | undefined {
 
 // --- Lobby operations ---
 
-export function createLobby(lobby: LobbyInfo): void {
+export async function createLobby(lobby: LobbyInfo): Promise<void> {
   if (lobby.invite_code) {
     lobby.invite_code = normalizeInviteCode(lobby.invite_code);
   }
@@ -211,8 +211,10 @@ export function createLobby(lobby: LobbyInfo): void {
     lobbiesByInviteCode.set(lobby.invite_code, lobby.id);
   }
 
-  prisma.lobby
-    .create({
+  // Await the DB write so the lobby is persisted before the API response.
+  // This is critical for Vercel serverless where the next GET may hit a different instance.
+  try {
+    await prisma.lobby.create({
       data: {
         id: lobby.id,
         gameType: lobby.game_type,
@@ -227,12 +229,93 @@ export function createLobby(lobby: LobbyInfo): void {
         inviteCode: lobby.invite_code ?? null,
         settings: lobby.settings ? JSON.parse(JSON.stringify(lobby.settings)) : undefined,
       },
-    })
-    .catch((err) => console.error("[store] Failed to persist lobby:", err));
+    });
+  } catch (err) {
+    console.error("[store] Failed to persist lobby:", err);
+  }
 }
 
 export function getLobby(id: LobbyId): LobbyInfo | undefined {
   return lobbies.get(id);
+}
+
+/**
+ * DB fallback for getLobby -- used when lobby not found in memory
+ * (e.g. GET hitting a different Vercel instance than the one that created it).
+ */
+export async function getLobbyFromDb(id: LobbyId): Promise<LobbyInfo | undefined> {
+  // Check memory first
+  const cached = lobbies.get(id);
+  if (cached) return cached;
+
+  // Fall back to DB
+  try {
+    const l = await prisma.lobby.findUnique({ where: { id } });
+    if (!l) return undefined;
+    const lobby: LobbyInfo = {
+      id: l.id,
+      game_type: l.gameType,
+      players: l.players,
+      max_players: l.maxPlayers,
+      min_players: l.minPlayers,
+      status: l.status as LobbyInfo["status"],
+      created_at: l.createdAt.getTime(),
+      last_activity_at: l.lastActivityAt.getTime(),
+      is_private: l.isPrivate,
+      invite_code: l.inviteCode ?? undefined,
+      match_id: l.matchId ?? undefined,
+      settings: (l.settings as Record<string, unknown>) ?? undefined,
+    };
+    // Cache it for future lookups on this instance
+    lobbies.set(lobby.id, lobby);
+    if (lobby.invite_code) {
+      lobbiesByInviteCode.set(normalizeInviteCode(lobby.invite_code), lobby.id);
+    }
+    return lobby;
+  } catch (err) {
+    console.error("[store] Failed to fetch lobby from DB:", err);
+    return undefined;
+  }
+}
+
+/**
+ * DB fallback for getLobbyByInviteCode.
+ */
+export async function getLobbyByInviteCodeFromDb(inviteCode: string): Promise<LobbyInfo | undefined> {
+  const normalized = normalizeInviteCode(inviteCode);
+  // Check memory first
+  const lobbyId = lobbiesByInviteCode.get(normalized);
+  if (lobbyId) return lobbies.get(lobbyId);
+
+  // Fall back to DB
+  try {
+    const l = await prisma.lobby.findFirst({
+      where: { inviteCode: normalized, status: { in: ["waiting", "starting"] } },
+    });
+    if (!l) return undefined;
+    const lobby: LobbyInfo = {
+      id: l.id,
+      game_type: l.gameType,
+      players: l.players,
+      max_players: l.maxPlayers,
+      min_players: l.minPlayers,
+      status: l.status as LobbyInfo["status"],
+      created_at: l.createdAt.getTime(),
+      last_activity_at: l.lastActivityAt.getTime(),
+      is_private: l.isPrivate,
+      invite_code: l.inviteCode ?? undefined,
+      match_id: l.matchId ?? undefined,
+      settings: (l.settings as Record<string, unknown>) ?? undefined,
+    };
+    lobbies.set(lobby.id, lobby);
+    if (lobby.invite_code) {
+      lobbiesByInviteCode.set(normalized, lobby.id);
+    }
+    return lobby;
+  } catch (err) {
+    console.error("[store] Failed to fetch lobby by invite code from DB:", err);
+    return undefined;
+  }
 }
 
 export function getAllLobbies(): LobbyInfo[] {

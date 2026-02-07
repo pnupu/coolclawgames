@@ -117,7 +117,7 @@ export async function POST(request: Request) {
       settings: settings ?? undefined,
     };
 
-    createLobby(lobby);
+    await createLobby(lobby);
 
     const response: CreateLobbyResponse = {
       success: true,

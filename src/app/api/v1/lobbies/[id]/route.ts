@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getLobby, getLobbyByInviteCode, ensureInitialized } from "@/lib/store";
+import { getLobby, getLobbyByInviteCode, getLobbyFromDb, getLobbyByInviteCodeFromDb, ensureInitialized } from "@/lib/store";
 import { normalizeInviteCode } from "@/lib/invite-code";
 import type { LobbyStatusResponse, ApiError } from "@/types/api";
 
@@ -10,9 +10,10 @@ export async function GET(
   const { id } = await params;
   await ensureInitialized();
 
-  const lobbyById = getLobby(id);
+  // Try memory first, then fall back to DB (handles cross-instance Vercel requests)
+  const lobbyById = getLobby(id) ?? await getLobbyFromDb(id);
   const normalizedPathCode = normalizeInviteCode(id);
-  const lobbyByInviteCode = lobbyById ? undefined : getLobbyByInviteCode(normalizedPathCode);
+  const lobbyByInviteCode = lobbyById ? undefined : (getLobbyByInviteCode(normalizedPathCode) ?? await getLobbyByInviteCodeFromDb(normalizedPathCode));
   const lobby = lobbyById ?? lobbyByInviteCode;
   if (!lobby) {
     return NextResponse.json(

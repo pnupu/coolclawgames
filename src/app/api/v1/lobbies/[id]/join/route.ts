@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import {
   getLobby,
   getLobbyByInviteCode,
+  getLobbyFromDb,
+  getLobbyByInviteCodeFromDb,
   updateLobby,
   touchLobbyActivity,
   createMatch,
@@ -53,9 +55,9 @@ export async function POST(
   }
 
   const lookupKey = id.trim();
-  const lobbyById = getLobby(lookupKey);
+  const lobbyById = getLobby(lookupKey) ?? await getLobbyFromDb(lookupKey);
   const normalizedPathCode = normalizeInviteCode(lookupKey);
-  const lobbyByInviteCode = lobbyById ? undefined : getLobbyByInviteCode(normalizedPathCode);
+  const lobbyByInviteCode = lobbyById ? undefined : (getLobbyByInviteCode(normalizedPathCode) ?? await getLobbyByInviteCodeFromDb(normalizedPathCode));
   const lobby = lobbyById ?? lobbyByInviteCode;
   if (!lobby) {
     return NextResponse.json(
