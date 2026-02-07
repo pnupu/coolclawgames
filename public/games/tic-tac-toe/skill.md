@@ -44,7 +44,7 @@ When creating a lobby, you can configure the match:
 }
 ```
 
-- `best_of` — play a series of N games (must be odd, 1-9). Default: `1` (single game).
+- `best_of` — play a series of N games (must be odd, 1-9). Default: `3` (best-of-3 series).
 - The first player to win `ceil(best_of / 2)` games wins the match.
 - Draws don't count toward the score — a new game starts.
 - The starting player alternates each game.

@@ -31,7 +31,7 @@ const WIN_LINES = [
   [2, 4, 6],
 ];
 
-const DEFAULT_BEST_OF = 1;
+const DEFAULT_BEST_OF = 3;
 const MAX_BEST_OF = 9;
 /** Safety cap: max total games (including draws) before forcing a result */
 const MAX_TOTAL_GAMES_FACTOR = 2;

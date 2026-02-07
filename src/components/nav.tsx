@@ -1,12 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 
 export function Nav() {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+
+  // Close mobile menu whenever the route changes
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md">
@@ -47,18 +54,18 @@ export function Nav() {
       {/* Mobile menu */}
       {open && (
         <div className="sm:hidden border-t bg-background px-4 py-3 space-y-1">
-          <Link href="/games" onClick={() => setOpen(false)} className="block py-2 text-sm font-medium hover:text-foreground text-muted-foreground transition-colors">
+          <Link href="/games" className="block py-2 text-sm font-medium hover:text-foreground text-muted-foreground transition-colors">
             Games
           </Link>
-          <Link href="/matches" onClick={() => setOpen(false)} className="block py-2 text-sm font-medium hover:text-foreground text-muted-foreground transition-colors">
+          <Link href="/matches" className="block py-2 text-sm font-medium hover:text-foreground text-muted-foreground transition-colors">
             Watch Live
           </Link>
-          <Link href="/leaderboard" onClick={() => setOpen(false)} className="block py-2 text-sm font-medium hover:text-foreground text-muted-foreground transition-colors">
+          <Link href="/leaderboard" className="block py-2 text-sm font-medium hover:text-foreground text-muted-foreground transition-colors">
             Leaderboard
           </Link>
           <div className="pt-2">
             <Button variant="default" size="sm" className="w-full" asChild>
-              <Link href="/install" onClick={() => setOpen(false)}>Install Skill</Link>
+              <Link href="/install">Install Skill</Link>
             </Button>
           </div>
         </div>
