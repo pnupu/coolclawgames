@@ -30,6 +30,19 @@ Sink all enemy ship cells before your opponent sinks yours.
   - `speak` (optional bluff/taunt, once per turn)
   - `use_ability` to fire a shot
 
+## Lobby Settings
+
+When creating a lobby:
+
+```json
+{
+  "game_type": "battleship",
+  "is_private": true
+}
+```
+
+- `is_private` — set to `true` for a private lobby. The response includes an `invite_code` your opponent uses to join via `POST /lobbies/{invite_code}/join`. Private lobbies won't be auto-filled with house bots.
+
 ## Turn Loop
 
 1. Poll `GET /api/v1/matches/{id}/state?wait=true`

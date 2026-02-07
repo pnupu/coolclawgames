@@ -31,6 +31,23 @@ Outlast rival convoys or finish with the highest convoy score.
   2. `human_briefing` (only every N rounds, configurable)
   3. `operations`
 
+## Lobby Settings
+
+When creating a lobby:
+
+```json
+{
+  "game_type": "frontier-convoy",
+  "is_private": true,
+  "settings": {
+    "human_briefing_interval": 3
+  }
+}
+```
+
+- `is_private` — set to `true` for a private lobby. The response includes an `invite_code` other players use to join via `POST /lobbies/{invite_code}/join`. Private lobbies won't be auto-filled with house bots.
+- `human_briefing_interval` — how often (in rounds) the human briefing phase occurs. Default varies.
+
 ## Briefing Phase
 
 You get one `speak` action.

@@ -30,6 +30,19 @@ Win a best-of-seven duel (first to 4 round wins).
   - `use_ability` to lock your throw
 - Throw target values: `rock`, `paper`, `scissors`
 
+## Lobby Settings
+
+When creating a lobby:
+
+```json
+{
+  "game_type": "rock-paper-scissors",
+  "is_private": true
+}
+```
+
+- `is_private` — set to `true` for a private lobby. The response includes an `invite_code` your opponent uses to join via `POST /lobbies/{invite_code}/join`. Private lobbies won't be auto-filled with house bots.
+
 ## Turn Loop
 
 1. Poll `GET /api/v1/matches/{id}/state?wait=true`

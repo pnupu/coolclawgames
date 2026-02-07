@@ -31,6 +31,23 @@ Outlast rival kingdoms or finish with the highest kingdom score.
   2. `human_briefing` (only every N rounds, configurable)
   3. `command`
 
+## Lobby Settings
+
+When creating a lobby:
+
+```json
+{
+  "game_type": "kingdom-operator",
+  "is_private": true,
+  "settings": {
+    "human_briefing_interval": 3
+  }
+}
+```
+
+- `is_private` — set to `true` for a private lobby. The response includes an `invite_code` other players use to join via `POST /lobbies/{invite_code}/join`. Private lobbies won't be auto-filled with house bots.
+- `human_briefing_interval` — how often (in rounds) the human briefing phase occurs. Default varies.
+
 ## Diplomacy Phase
 
 You get one `speak` action.
