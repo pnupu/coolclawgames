@@ -1,6 +1,7 @@
 import { getMatch, gameEvents } from "@/lib/store";
-import { getAuthenticatedSpectatorView, getCensoredSpectatorView } from "@/engine/game-engine";
+import { getSpectatorViewForMatch } from "@/engine/dispatcher";
 import { validateSpectatorToken } from "@/lib/spectator-token";
+import { acquireActiveSlot, checkRequestRateLimit, getClientIp } from "@/lib/rate-limit";
 import type { GameEvent } from "@/types/game";
 // Ensure turn timeout enforcement is running
 import "@/lib/turn-timeout";
@@ -11,8 +12,35 @@ export async function GET(
 ) {
   const { id: matchId } = await params;
 
+  const requestLimit = checkRequestRateLimit(request, "sse-connect", 20, 60_000);
+  if (!requestLimit.ok) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: "Too many stream connection attempts",
+      }),
+      { status: 429, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  const clientIp = getClientIp(request);
+  const slot = acquireActiveSlot("sse-match-events", clientIp, 5, 300);
+  if (!slot.ok) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error:
+          slot.reason === "per_ip_limit"
+            ? "Too many open streams from this IP"
+            : "Server stream capacity reached",
+      }),
+      { status: 429, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
   const match = getMatch(matchId);
   if (!match) {
+    slot.release();
     return new Response(
       JSON.stringify({ success: false, error: "Match not found" }),
       { status: 404, headers: { "Content-Type": "application/json" } }
@@ -24,12 +52,19 @@ export async function GET(
   const token = url.searchParams.get("spectator_token");
   const isAuthorized = validateSpectatorToken(matchId, token);
 
-  // Choose the view function based on authorization
-  const getView = isAuthorized ? getAuthenticatedSpectatorView : getCensoredSpectatorView;
-
   const stream = new ReadableStream({
     start(controller) {
       const encoder = new TextEncoder();
+      let cleaned = false;
+      let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
+
+      function cleanup() {
+        if (cleaned) return;
+        cleaned = true;
+        gameEvents.removeListener(`match:${matchId}:event`, onEvent);
+        if (heartbeatInterval) clearInterval(heartbeatInterval);
+        slot.release();
+      }
 
       function send(eventType: string, data: unknown) {
         try {
@@ -44,7 +79,7 @@ export async function GET(
       // Send initial state
       const currentMatch = getMatch(matchId);
       if (currentMatch) {
-        send("state_update", getView(currentMatch));
+        send("state_update", getSpectatorViewForMatch(currentMatch, isAuthorized));
       }
 
       // Events that change player status or game phase -- need full state refresh
@@ -62,7 +97,7 @@ export async function GET(
         // Get fresh state for spectator event conversion
         const freshMatch = getMatch(matchId);
         if (!freshMatch) return;
-        const specView = getView(freshMatch);
+        const specView = getSpectatorViewForMatch(freshMatch, isAuthorized);
         const specEvent = specView.events.find((e) => e.id === event.id);
         if (specEvent) {
           send("event", specEvent);
@@ -84,18 +119,13 @@ export async function GET(
       gameEvents.on(`match:${matchId}:event`, onEvent);
 
       // Heartbeat every 15s
-      const heartbeatInterval = setInterval(() => {
+      heartbeatInterval = setInterval(() => {
         try {
           controller.enqueue(encoder.encode(": heartbeat\n\n"));
         } catch {
           cleanup();
         }
       }, 15_000);
-
-      function cleanup() {
-        gameEvents.removeListener(`match:${matchId}:event`, onEvent);
-        clearInterval(heartbeatInterval);
-      }
 
       // Handle client disconnect via abort signal
       request.signal.addEventListener("abort", () => {

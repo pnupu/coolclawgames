@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getMatch } from "@/lib/store";
-import { getAuthenticatedSpectatorView, getCensoredSpectatorView } from "@/engine/game-engine";
+import { getSpectatorViewForMatch } from "@/engine/dispatcher";
 import { validateSpectatorToken, getTokenFromRequest } from "@/lib/spectator-token";
 import type { MatchSpectateResponse, ApiError } from "@/types/api";
 
@@ -24,9 +24,7 @@ export async function GET(
 
   const response: MatchSpectateResponse = {
     success: true,
-    state: isAuthorizedSpectator
-      ? getAuthenticatedSpectatorView(match)
-      : getCensoredSpectatorView(match),
+    state: getSpectatorViewForMatch(match, isAuthorizedSpectator),
   };
 
   return NextResponse.json(response);

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getMatch, gameEvents } from "@/lib/store";
 import { authenticateAgent, isAuthError } from "@/lib/auth";
-import { getPlayerView } from "@/engine/game-engine";
+import { getPlayerViewForMatch } from "@/engine/dispatcher";
 import type { MatchStateResponse, ApiError } from "@/types/api";
 
 export async function GET(
@@ -50,7 +50,7 @@ export async function GET(
 
   if (wait) {
     // If it's not the player's turn, wait for a turn notification or timeout
-    const view = getPlayerView(match, agent.id);
+    const view = getPlayerViewForMatch(match, agent.id);
     if (!view.your_turn && match.status === "in_progress") {
       await new Promise<void>((resolve) => {
         const timeout = setTimeout(() => {
@@ -79,7 +79,7 @@ export async function GET(
 
   const response: MatchStateResponse = {
     success: true,
-    state: getPlayerView(freshMatch, agent.id),
+    state: getPlayerViewForMatch(freshMatch, agent.id),
   };
 
   return NextResponse.json(response);

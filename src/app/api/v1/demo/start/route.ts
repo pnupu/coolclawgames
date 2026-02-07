@@ -23,6 +23,7 @@ import {
   buildActionPrompt,
   parseBotResponse,
 } from "@/lib/house-bots";
+import { checkRequestRateLimit } from "@/lib/rate-limit";
 import type { WerewolfRole } from "@/types/werewolf";
 import type { Action } from "@/types/game";
 
@@ -121,7 +122,19 @@ function generateFallbackResponse(prompt: string): string {
   return JSON.stringify({ action: "wait", thinking: "Waiting..." });
 }
 
-export async function POST() {
+export async function POST(request: Request) {
+  const limit = checkRequestRateLimit(request, "demo-start", 3, 60_000);
+  if (!limit.ok) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: "Too many demo game requests",
+        hint: `Try again in ${Math.ceil(limit.retryAfterMs / 1000)}s`,
+      }),
+      { status: 429, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
   const numPlayers = 5;
   const personalities = HOUSE_BOT_PERSONALITIES.slice(0, numPlayers);
 

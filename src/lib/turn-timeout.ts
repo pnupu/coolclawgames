@@ -7,8 +7,12 @@
 // ============================================================
 
 import { getAllMatches, getMatch, updateMatch, gameEvents } from "@/lib/store";
-import { handleTimeout, getPlayerView } from "@/engine/game-engine";
-import { TURN_TIMEOUT_MS } from "@/types/werewolf";
+import {
+  handleTimeoutForMatch,
+  getPlayerViewForMatch,
+  handlePhaseDeadlineForMatch,
+  isPhaseDeadlineManagedGame,
+} from "@/engine/dispatcher";
 
 // Track when each player's current turn started
 // Key: `${matchId}:${playerId}`, Value: timestamp
@@ -60,13 +64,53 @@ function checkForTimeouts(): void {
     }
     if (processingMatches.has(state.matchId)) continue;
 
+    const phaseDeadlineState = handlePhaseDeadlineForMatch(state, now);
+    if (phaseDeadlineState) {
+      processingMatches.add(state.matchId);
+      try {
+        const freshState = getMatch(state.matchId);
+        if (!freshState || freshState.status !== "in_progress") {
+          clearMatch(state.matchId);
+          processingMatches.delete(state.matchId);
+          continue;
+        }
+
+        updateMatch(state.matchId, phaseDeadlineState);
+
+        const newEvents = phaseDeadlineState.events.slice(freshState.events.length);
+        for (const event of newEvents) {
+          gameEvents.emit(`match:${state.matchId}:event`, event);
+        }
+
+        for (const p of phaseDeadlineState.players) {
+          if (p.alive) {
+            try {
+              const pView = getPlayerViewForMatch(phaseDeadlineState, p.agentId);
+              if (pView.your_turn) {
+                gameEvents.emit(`turn:${p.agentId}`);
+              }
+            } catch {
+              // skip
+            }
+          }
+        }
+      } finally {
+        processingMatches.delete(state.matchId);
+      }
+      continue;
+    }
+
+    if (isPhaseDeadlineManagedGame(state)) {
+      continue;
+    }
+
     // Find players whose turn it is
     for (const player of state.players) {
       if (!player.alive) continue;
 
       let view;
       try {
-        view = getPlayerView(state, player.agentId);
+        view = getPlayerViewForMatch(state, player.agentId);
       } catch {
         continue;
       }
@@ -78,7 +122,7 @@ function checkForTimeouts(): void {
         recordTurnStart(state.matchId, player.agentId);
 
         const turnStart = turnStartTimes.get(key);
-        if (turnStart && now - turnStart > TURN_TIMEOUT_MS) {
+        if (turnStart && now - turnStart > view.turn_timeout_ms) {
           // Player has exceeded timeout -- auto-action
           processingMatches.add(state.matchId);
           console.log(
@@ -93,7 +137,7 @@ function checkForTimeouts(): void {
               continue;
             }
 
-            const newState = handleTimeout(freshState, player.agentId);
+            const newState = handleTimeoutForMatch(freshState, player.agentId);
             updateMatch(state.matchId, newState);
 
             // Emit new events for spectator SSE
@@ -106,7 +150,7 @@ function checkForTimeouts(): void {
             for (const p of newState.players) {
               if (p.alive) {
                 try {
-                  const pView = getPlayerView(newState, p.agentId);
+                  const pView = getPlayerViewForMatch(newState, p.agentId);
                   if (pView.your_turn) {
                     gameEvents.emit(`turn:${p.agentId}`);
                   }
@@ -138,7 +182,7 @@ let timeoutInterval: ReturnType<typeof setInterval> | null = null;
 export function startTimeoutLoop(): void {
   if (timeoutInterval) return;
   timeoutInterval = setInterval(checkForTimeouts, 5_000); // check every 5s
-  console.log(`[turn-timeout] Turn timeout loop started (checking every 5s, timeout after ${TURN_TIMEOUT_MS / 1000}s)`);
+  console.log("[turn-timeout] Turn timeout loop started (checking every 5s)");
 }
 
 export function stopTimeoutLoop(): void {

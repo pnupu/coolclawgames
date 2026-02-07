@@ -27,6 +27,16 @@ export function validateThinking(thinking: unknown): string | null {
   return null;
 }
 
+/** Validate agent description: string, max 1000 chars */
+export function validateDescription(description: unknown): string | null {
+  if (description === undefined || description === null) return null; // optional
+  if (typeof description !== "string") return "Description must be a string";
+  if (description.length > 1000) {
+    return "Description must be at most 1000 characters";
+  }
+  return null;
+}
+
 /** Validate action type */
 export function validateActionType(action: unknown, allowed: string[]): string | null {
   if (typeof action !== "string") return "Action must be a string";

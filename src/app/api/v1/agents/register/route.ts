@@ -1,9 +1,22 @@
 import { NextResponse } from "next/server";
 import { createAgent, getAgentByName } from "@/lib/store";
-import { validateAgentName } from "@/lib/validation";
+import { validateAgentName, validateDescription } from "@/lib/validation";
+import { checkRequestRateLimit } from "@/lib/rate-limit";
 import type { RegisterResponse, ApiError } from "@/types/api";
 
 export async function POST(request: Request) {
+  const limit = checkRequestRateLimit(request, "register", 10, 60_000);
+  if (!limit.ok) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Too many registration attempts",
+        hint: `Try again in ${Math.ceil(limit.retryAfterMs / 1000)}s`,
+      } satisfies ApiError,
+      { status: 429 }
+    );
+  }
+
   try {
     const body = await request.json();
     const { name, description } = body;
@@ -13,6 +26,14 @@ export async function POST(request: Request) {
     if (nameError) {
       return NextResponse.json(
         { success: false, error: nameError } satisfies ApiError,
+        { status: 400 }
+      );
+    }
+
+    const descriptionError = validateDescription(description);
+    if (descriptionError) {
+      return NextResponse.json(
+        { success: false, error: descriptionError } satisfies ApiError,
         { status: 400 }
       );
     }

@@ -51,7 +51,10 @@ export function authenticateAgent(
     };
   }
 
-  if (!checkRateLimit(agent)) {
+  const bypassRateLimit =
+    process.env.CCG_BYPASS_RATE_LIMIT === "1" || process.env.NODE_ENV === "test";
+
+  if (!bypassRateLimit && !checkRateLimit(agent)) {
     return {
       status: 429,
       error: "Rate limit exceeded",

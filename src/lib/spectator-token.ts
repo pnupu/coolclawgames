@@ -9,16 +9,19 @@
 // Without a valid token, the API returns a censored view.
 // ============================================================
 
-import { createHmac } from "crypto";
+import { createHmac, randomBytes, timingSafeEqual } from "crypto";
+
+const globalSecrets = globalThis as unknown as {
+  __ccg_spectator_secret?: string;
+};
 
 /**
  * Secret used to generate spectator tokens.
- * Falls back to a random value per server instance (still works for single-instance).
+ * If env is missing, generate one secure random secret per server instance.
  */
 const SPECTATOR_SECRET =
-  process.env.SPECTATOR_SECRET ||
-  process.env.MISTRAL_API_KEY ||
-  `fallback-${Date.now()}-${Math.random()}`;
+  process.env.SPECTATOR_SECRET ??
+  (globalSecrets.__ccg_spectator_secret ??= randomBytes(32).toString("hex"));
 
 /**
  * Generate a spectator token for a given match.
@@ -39,13 +42,8 @@ export function validateSpectatorToken(
 ): boolean {
   if (!token) return false;
   const expected = generateSpectatorToken(matchId);
-  // Constant-time comparison to prevent timing attacks
   if (token.length !== expected.length) return false;
-  let result = 0;
-  for (let i = 0; i < token.length; i++) {
-    result |= token.charCodeAt(i) ^ expected.charCodeAt(i);
-  }
-  return result === 0;
+  return timingSafeEqual(Buffer.from(token), Buffer.from(expected));
 }
 
 /**

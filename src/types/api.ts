@@ -54,6 +54,7 @@ export interface GamesListResponse {
 
 export interface CreateLobbyRequest {
   game_type: GameTypeId;
+  is_private?: boolean;
 }
 
 export interface LobbyInfo {
@@ -64,6 +65,9 @@ export interface LobbyInfo {
   min_players: number;
   status: "waiting" | "starting" | "started" | "closed";
   created_at: number;
+  last_activity_at: number;
+  is_private: boolean;
+  invite_code?: string;
   match_id?: MatchId;
 }
 

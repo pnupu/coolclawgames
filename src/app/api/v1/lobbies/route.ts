@@ -3,8 +3,11 @@ import {
   createLobby,
   getAllLobbies,
   checkLobbyCooldown,
+  getLobbyByInviteCode,
 } from "@/lib/store";
 import { authenticateAgent, isAuthError } from "@/lib/auth";
+import { hasGameType, getGameTypeDefinition } from "@/engine/registry";
+import { generateInviteCode } from "@/lib/invite-code";
 import type {
   LobbiesListResponse,
   CreateLobbyResponse,
@@ -14,9 +17,12 @@ import type {
 // Import to start the auto-fill loop and turn timeout enforcement
 import "@/lib/lobby-autofill";
 import "@/lib/turn-timeout";
+import "@/lib/private-lobby-cleanup";
 
 export async function GET() {
-  const lobbies = getAllLobbies().filter((l) => l.status === "waiting");
+  const lobbies = getAllLobbies().filter(
+    (l) => l.status === "waiting" && !l.is_private
+  );
 
   const response: LobbiesListResponse = {
     success: true,
@@ -43,18 +49,33 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { game_type } = body;
+    const { game_type, is_private } = body;
 
-    if (!game_type || game_type !== "werewolf") {
+    if (typeof game_type !== "string" || !hasGameType(game_type)) {
       return NextResponse.json(
         {
           success: false,
           error: "Invalid game_type",
-          hint: "Currently only 'werewolf' is supported",
+          hint: "Use GET /api/v1/games to see supported game types",
         } satisfies ApiError,
         { status: 400 }
       );
     }
+    const definition = getGameTypeDefinition(game_type)!;
+    if (is_private !== undefined && typeof is_private !== "boolean") {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid is_private value",
+          hint: "is_private must be a boolean when provided",
+        } satisfies ApiError,
+        { status: 400 }
+      );
+    }
+    const isPrivateLobby = is_private === true;
+    const inviteCode = isPrivateLobby
+      ? generateInviteCode((code) => !!getLobbyByInviteCode(code))
+      : undefined;
 
     // Check lobby cooldown
     if (!checkLobbyCooldown(agent)) {
@@ -72,10 +93,13 @@ export async function POST(request: Request) {
       id: crypto.randomUUID(),
       game_type,
       players: [agent.name],
-      min_players: 5,
-      max_players: 7,
+      min_players: definition.min_players,
+      max_players: definition.max_players,
       status: "waiting",
       created_at: Date.now(),
+      last_activity_at: Date.now(),
+      is_private: isPrivateLobby,
+      invite_code: inviteCode,
     };
 
     createLobby(lobby);

@@ -7,6 +7,7 @@ import type { GameState, AgentId, MatchId, LobbyId } from "@/types/game";
 import type { LobbyInfo } from "@/types/api";
 import { EventEmitter } from "events";
 import { prisma } from "@/lib/prisma";
+import { normalizeInviteCode } from "@/lib/invite-code";
 
 /** Stored agent record (in-memory shape, mirrors DB) */
 export interface StoredAgent {
@@ -38,12 +39,14 @@ const globalStore = globalThis as unknown as {
   __ccg_agentsByKey?: Map<string, StoredAgent>;
   __ccg_agentsByName?: Map<string, StoredAgent>;
   __ccg_lobbies?: Map<LobbyId, LobbyInfo>;
+  __ccg_lobbyByInviteCode?: Map<string, LobbyId>;
   __ccg_matches?: Map<MatchId, GameState>;
 };
 
 const agentsByKey = globalStore.__ccg_agentsByKey ??= new Map<string, StoredAgent>();
 const agentsByName = globalStore.__ccg_agentsByName ??= new Map<string, StoredAgent>();
 const lobbies = globalStore.__ccg_lobbies ??= new Map<LobbyId, LobbyInfo>();
+const lobbiesByInviteCode = globalStore.__ccg_lobbyByInviteCode ??= new Map<string, LobbyId>();
 const matches = globalStore.__ccg_matches ??= new Map<MatchId, GameState>();
 
 // ============================================================
@@ -106,6 +109,9 @@ async function ensureInitialized(): Promise<void> {
         min_players: l.minPlayers,
         status: l.status as LobbyInfo["status"],
         created_at: l.createdAt.getTime(),
+        last_activity_at: l.createdAt.getTime(),
+        is_private: false,
+        invite_code: undefined,
         match_id: l.matchId ?? undefined,
       };
       lobbies.set(lobby.id, lobby);
@@ -177,7 +183,14 @@ export function getAgentByName(name: string): StoredAgent | undefined {
 // --- Lobby operations ---
 
 export function createLobby(lobby: LobbyInfo): void {
+  if (lobby.invite_code) {
+    lobby.invite_code = normalizeInviteCode(lobby.invite_code);
+  }
   lobbies.set(lobby.id, lobby);
+  if (lobby.invite_code) {
+    lobbiesByInviteCode.set(lobby.invite_code, lobby.id);
+  }
+  if (lobby.is_private) return;
 
   prisma.lobby
     .create({
@@ -203,10 +216,33 @@ export function getAllLobbies(): LobbyInfo[] {
   return Array.from(lobbies.values());
 }
 
+export function getLobbyByInviteCode(inviteCode: string): LobbyInfo | undefined {
+  const normalized = normalizeInviteCode(inviteCode);
+  const lobbyId = lobbiesByInviteCode.get(normalized);
+  if (!lobbyId) return undefined;
+  return lobbies.get(lobbyId);
+}
+
 export function updateLobby(id: LobbyId, updates: Partial<LobbyInfo>): void {
   const lobby = lobbies.get(id);
   if (lobby) {
+    const previousInviteCode = lobby.invite_code;
+    if (updates.invite_code !== undefined && updates.invite_code) {
+      updates.invite_code = normalizeInviteCode(updates.invite_code);
+    }
     Object.assign(lobby, updates);
+    if (lobby.invite_code !== previousInviteCode) {
+      if (previousInviteCode) {
+        lobbiesByInviteCode.delete(previousInviteCode);
+      }
+      if (lobby.invite_code) {
+        lobbiesByInviteCode.set(lobby.invite_code, id);
+      }
+    }
+
+    if (lobby.is_private) {
+      return;
+    }
 
     // Build Prisma update data from the updates
     const dbUpdates: Record<string, unknown> = {};
@@ -223,11 +259,22 @@ export function updateLobby(id: LobbyId, updates: Partial<LobbyInfo>): void {
 }
 
 export function deleteLobby(id: LobbyId): void {
+  const lobby = lobbies.get(id);
+  if (lobby?.invite_code) {
+    lobbiesByInviteCode.delete(lobby.invite_code);
+  }
   lobbies.delete(id);
+  if (lobby?.is_private) return;
 
   prisma.lobby
-    .delete({ where: { id } })
+    .deleteMany({ where: { id } })
     .catch((err) => console.error("[store] Failed to delete lobby:", err));
+}
+
+export function touchLobbyActivity(id: LobbyId, at = Date.now()): void {
+  const lobby = getLobby(id);
+  if (!lobby) return;
+  updateLobby(id, { last_activity_at: at });
 }
 
 // --- Match operations ---
@@ -236,8 +283,16 @@ export function createMatch(state: GameState): void {
   matches.set(state.matchId, state);
 
   prisma.match
-    .create({
-      data: {
+    .upsert({
+      where: { id: state.matchId },
+      update: {
+        status: state.status,
+        phase: state.phase,
+        round: state.round,
+        playerCount: state.players.length,
+        state: serializeState(state) as object,
+      },
+      create: {
         id: state.matchId,
         gameType: state.gameType,
         status: state.status,
@@ -263,13 +318,23 @@ export function updateMatch(id: MatchId, state: GameState): void {
   matches.set(id, state);
 
   prisma.match
-    .update({
+    .upsert({
       where: { id },
-      data: {
+      update: {
         status: state.status,
         phase: state.phase,
         round: state.round,
         playerCount: state.players.length,
+        state: serializeState(state) as object,
+      },
+      create: {
+        id,
+        gameType: state.gameType,
+        status: state.status,
+        phase: state.phase,
+        round: state.round,
+        playerCount: state.players.length,
+        createdAt: new Date(state.createdAt),
         state: serializeState(state) as object,
       },
     })

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getMatch, updateMatch, gameEvents } from "@/lib/store";
 import { authenticateAgent, isAuthError } from "@/lib/auth";
-import { processAction, getPlayerView } from "@/engine/game-engine";
+import { processActionForMatch, getPlayerViewForMatch } from "@/engine/dispatcher";
 import { validateMessage, validateThinking } from "@/lib/validation";
 import type { ActionResponse, ApiError } from "@/types/api";
 import type { Action } from "@/types/game";
@@ -73,7 +73,7 @@ export async function POST(
   }
 
   // Check it's their turn
-  const view = getPlayerView(match, agent.id);
+  const view = getPlayerViewForMatch(match, agent.id);
   if (!view.your_turn) {
     return NextResponse.json(
       {
@@ -85,10 +85,10 @@ export async function POST(
     );
   }
 
-  // Resolve target: agents may send a player name (from alive_players list)
-  // or an agent ID. We need to normalize to agent ID for the engine.
+  // Resolve target names to agent IDs only for Werewolf.
+  // Other games may use non-player target strings (e.g., "B2", "rock").
   let resolvedTarget = target as string | undefined;
-  if (resolvedTarget) {
+  if (match.gameType === "werewolf" && resolvedTarget) {
     // First check if it's already a valid agent ID
     const byId = match.players.find((p) => p.agentId === resolvedTarget);
     if (!byId) {
@@ -114,7 +114,7 @@ export async function POST(
   // Process the action through the game engine
   let newState;
   try {
-    newState = processAction(match, agent.id, gameAction);
+    newState = processActionForMatch(match, agent.id, gameAction);
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : "Action failed";
     return NextResponse.json(
@@ -137,7 +137,7 @@ export async function POST(
   // Check all alive players and emit turn event for whoever's turn it is now
   for (const p of newState.players) {
     if (p.alive) {
-      const pView = getPlayerView(newState, p.agentId);
+      const pView = getPlayerViewForMatch(newState, p.agentId);
       if (pView.your_turn) {
         gameEvents.emit(`turn:${p.agentId}`);
       }
@@ -147,7 +147,7 @@ export async function POST(
   const response: ActionResponse = {
     success: true,
     message: "Action processed",
-    poll_after_ms: getPlayerView(newState, agent.id).poll_after_ms,
+    poll_after_ms: getPlayerViewForMatch(newState, agent.id).poll_after_ms,
   };
 
   return NextResponse.json(response);
