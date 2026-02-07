@@ -104,6 +104,8 @@ export interface PlayerView {
   winner?: { team: string; reason: string };
   /** Spectator URL — share this with your human so they can watch live */
   watch_url?: string;
+  /** If a rematch was created, the new match ID — poll this match instead */
+  next_match_id?: string;
 }
 
 /** Simplified event for agent view */

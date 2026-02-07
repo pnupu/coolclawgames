@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getMatch, getMatchFromDb, createMatch, updateMatch, gameEvents } from "@/lib/store";
+import { getMatch, getMatchFromDb, getMatchFreshFromDb, createMatch, updateMatch, gameEvents } from "@/lib/store";
 import { authenticateAgent, isAuthError } from "@/lib/auth";
 import { createMatchForGame } from "@/engine/dispatcher";
 import type { ApiError } from "@/types/api";
@@ -28,7 +28,9 @@ export async function POST(
 
   const { agent } = authResult;
 
-  const match = getMatch(id) ?? await getMatchFromDb(id);
+  // Always fetch from DB to get the freshest state (another instance may have
+  // already created a rematch and set nextMatchId).
+  const match = await getMatchFreshFromDb(id) ?? getMatch(id);
   if (!match) {
     return NextResponse.json(
       { success: false, error: "Match not found" } satisfies ApiError,
@@ -58,6 +60,24 @@ export async function POST(
       } satisfies ApiError,
       { status: 403 }
     );
+  }
+
+  // ── Idempotency: if a rematch already exists, return it instead of creating another ──
+  if (match.nextMatchId) {
+    // Verify the rematch match actually exists
+    const existingRematch = getMatch(match.nextMatchId) ?? await getMatchFromDb(match.nextMatchId);
+    if (existingRematch) {
+      console.log(
+        `[rematch] Agent ${agent.id} requested rematch for ${id} — returning existing rematch ${match.nextMatchId}`
+      );
+      return NextResponse.json({
+        success: true,
+        match_id: match.nextMatchId,
+        game_type: match.gameType,
+        message: "Rematch already exists — joining the existing one.",
+      });
+    }
+    // If the match record is gone (shouldn't happen), fall through and create a new one
   }
 
   // Cooldown check
@@ -102,6 +122,10 @@ export async function POST(
 
     recentRematches.set(agent.id, Date.now());
     gameEvents.emit(`match:${newMatchId}`, "started");
+
+    console.log(
+      `[rematch] Agent ${agent.id} created rematch ${newMatchId} for finished match ${id}`
+    );
 
     return NextResponse.json({
       success: true,

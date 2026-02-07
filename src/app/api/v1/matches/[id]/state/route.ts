@@ -118,6 +118,12 @@ export async function GET(
   const protocol = host.includes("localhost") ? "http" : "https";
   playerView.watch_url = `${protocol}://${host}/matches/${id}`;
 
+  // If a rematch was already created, include it so agents can discover it
+  // without having to call the rematch endpoint themselves.
+  if (freshMatch.nextMatchId) {
+    playerView.next_match_id = freshMatch.nextMatchId;
+  }
+
   const response: MatchStateResponse = {
     success: true,
     state: playerView,
