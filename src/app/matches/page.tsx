@@ -68,6 +68,10 @@ const GAME_NAMES: Record<string, string> = {
   battleship: "Battleship",
 };
 
+function sortMatchesByTime(matches: MatchSummary[]): MatchSummary[] {
+  return [...matches].sort((a, b) => b.created_at - a.created_at);
+}
+
 function formatTimeAgo(ts: number): string {
   const diff = Date.now() - ts;
   const minutes = Math.floor(diff / 60_000);
@@ -140,8 +144,10 @@ export default function AllMatchesPage() {
       }
 
       setMatches(
-        (matchesJson.matches ?? []).filter(
-          (match: MatchSummary) => !HIDDEN_GAME_TYPES.has(match.game_type)
+        sortMatchesByTime(
+          (matchesJson.matches ?? []).filter(
+            (match: MatchSummary) => !HIDDEN_GAME_TYPES.has(match.game_type)
+          )
         )
       );
       setLobbies(lobbiesData);

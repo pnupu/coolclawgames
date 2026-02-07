@@ -30,6 +30,10 @@ interface LobbyInfo {
 
 const AUTOFILL_DELAY_MS = 30_000;
 
+function sortMatchesByTime(matches: MatchSummary[]): MatchSummary[] {
+  return [...matches].sort((a, b) => b.created_at - a.created_at);
+}
+
 const PHASE_LABELS: Record<string, { icon: string; label: string; color: string }> = {
   // Werewolf
   day_discussion: { icon: "☀️", label: "Day Discussion", color: "text-yellow-400" },
@@ -151,7 +155,7 @@ export function GameMatchesPage({
         (m: MatchSummary) => m.game_type === gameType
       );
 
-      setMatches(filteredMatches);
+      setMatches(sortMatchesByTime(filteredMatches));
       setLobbies(lobbiesData);
       setError(null);
     } catch (err) {

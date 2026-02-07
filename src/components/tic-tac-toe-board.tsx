@@ -151,6 +151,7 @@ export function TicTacToeBoard({ spectatorView }: TicTacToeBoardProps) {
   // Determine what board/winLine to show based on selected tab
   const isViewingCurrentGame = selectedGame === currentGameIndex && !isFinished;
   const isViewingHistoryGame = selectedGame < gameHistory.length;
+  const selectedGameNumber = selectedGame + 1;
 
   let displayBoard: Array<string | null>;
   let displayWinLine: number[] | null;
@@ -222,37 +223,59 @@ export function TicTacToeBoard({ spectatorView }: TicTacToeBoardProps) {
 
       {/* Game switcher tabs (only for series with multiple games) */}
       {bestOf > 1 && totalGames > 0 && (
-        <div className="flex items-center gap-1">
-          {Array.from({ length: totalGames }, (_, i) => {
-            const isSelected = i === selectedGame;
-            const isHistorical = i < gameHistory.length;
-            const histGame = isHistorical ? gameHistory[i] : null;
-            const tabWinner = histGame?.winner;
+        <div className="w-full max-w-xl rounded-theme-md border border-theme bg-theme/40 p-2.5">
+          <div className="flex items-center justify-between gap-2">
+            <button
+              onClick={() => setSelectedGame((v) => Math.max(0, v - 1))}
+              disabled={selectedGame === 0}
+              className="px-2.5 py-1 text-xs font-semibold rounded-theme-sm border border-theme bg-theme-secondary/60 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-theme-secondary"
+            >
+              Prev
+            </button>
+            <p className="text-xs font-semibold text-theme-primary text-center">
+              Viewing Game {selectedGameNumber} of {totalGames}
+            </p>
+            <button
+              onClick={() => setSelectedGame((v) => Math.min(currentGameIndex, v + 1))}
+              disabled={selectedGame >= currentGameIndex}
+              className="px-2.5 py-1 text-xs font-semibold rounded-theme-sm border border-theme bg-theme-secondary/60 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-theme-secondary"
+            >
+              Next
+            </button>
+          </div>
 
-            return (
-              <button
-                key={i}
-                onClick={() => setSelectedGame(i)}
-                className={`
-                  px-3 py-1 text-xs font-bold rounded-theme-sm transition-all cursor-pointer
-                  ${isSelected
-                    ? "bg-[var(--claw-blue)] text-white shadow-md"
-                    : "bg-theme-secondary/60 text-theme-secondary hover:bg-theme-secondary hover:text-theme-primary"
-                  }
-                `}
-              >
-                <span>Game {i + 1}</span>
-                {isHistorical && tabWinner && (
-                  <span className="ml-1 opacity-70">
-                    {tabWinner === "draw" ? "=" : tabWinner === "X" ? "X" : "O"}
-                  </span>
-                )}
-                {!isHistorical && !isFinished && (
-                  <span className="ml-1 text-[var(--success)] opacity-80">&#x25CF;</span>
-                )}
-              </button>
-            );
-          })}
+          <div className="mt-2 flex items-center gap-1 overflow-x-auto pb-1">
+            {Array.from({ length: totalGames }, (_, i) => {
+              const isSelected = i === selectedGame;
+              const isHistorical = i < gameHistory.length;
+              const histGame = isHistorical ? gameHistory[i] : null;
+              const tabWinner = histGame?.winner;
+
+              return (
+                <button
+                  key={i}
+                  onClick={() => setSelectedGame(i)}
+                  className={`
+                    shrink-0 px-3 py-1 text-xs font-bold rounded-theme-sm transition-all cursor-pointer
+                    ${isSelected
+                      ? "bg-[var(--claw-blue)] text-white shadow-md"
+                      : "bg-theme-secondary/60 text-theme-secondary hover:bg-theme-secondary hover:text-theme-primary"
+                    }
+                  `}
+                >
+                  <span>Game {i + 1}</span>
+                  {isHistorical && tabWinner && (
+                    <span className="ml-1 opacity-70">
+                      {tabWinner === "draw" ? "=" : tabWinner === "X" ? "X" : "O"}
+                    </span>
+                  )}
+                  {!isHistorical && !isFinished && (
+                    <span className="ml-1 text-[var(--success)] opacity-80">&#x25CF;</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 
@@ -283,7 +306,14 @@ export function TicTacToeBoard({ spectatorView }: TicTacToeBoardProps) {
       {/* Historical game result label */}
       {isViewingHistoryGame && (
         <div className="text-xs font-semibold text-theme-tertiary mt-1">
-          {gameLabel}
+          Game {selectedGameNumber}: {gameLabel}
+        </div>
+      )}
+
+      {/* Current game status label */}
+      {!isViewingHistoryGame && (
+        <div className="text-xs font-semibold text-theme-tertiary mt-1">
+          Game {selectedGameNumber}: {gameLabel}
         </div>
       )}
 
