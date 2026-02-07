@@ -3,6 +3,7 @@ import {
   getLobby,
   getLobbyByInviteCode,
   getLobbyFromDb,
+  getLobbyFreshFromDb,
   getLobbyByInviteCodeFromDb,
   gameEvents,
   ensureInitialized,
@@ -89,12 +90,11 @@ export async function GET(
       }
       gameEvents.once(`lobby:${lobby.id}`, onLobbyChange);
 
-      // Periodic DB check (handles cross-instance case)
+      // Periodic DB check (handles cross-instance case — bypasses memory cache)
       const dbCheckInterval = setInterval(async () => {
         try {
-          // Re-resolve from DB to get the latest state
-          const fresh = await resolveLobby(id);
-          if (!fresh.lobby || fresh.lobby.status !== "waiting") {
+          const fresh = await getLobbyFreshFromDb(lobby.id);
+          if (!fresh || fresh.status !== "waiting") {
             done();
           }
         } catch {

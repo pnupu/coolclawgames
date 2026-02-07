@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getMatch, getMatchFromDb, gameEvents, markPlayerConnected } from "@/lib/store";
+import { getMatch, getMatchFromDb, getMatchFreshFromDb, gameEvents, markPlayerConnected } from "@/lib/store";
 import { authenticateAgent, isAuthError } from "@/lib/auth";
 import { getPlayerViewForMatch } from "@/engine/dispatcher";
 import type { MatchStateResponse, ApiError } from "@/types/api";
@@ -82,10 +82,10 @@ export async function GET(
         function onTurn() { done(); }
         gameEvents.once(`turn:${agent.id}`, onTurn);
 
-        // Periodic DB check (handles cross-instance case)
+        // Periodic DB check (handles cross-instance case — always hits DB, bypasses cache)
         const dbCheckInterval = setInterval(async () => {
           try {
-            const freshMatch = await getMatchFromDb(id);
+            const freshMatch = await getMatchFreshFromDb(id);
             if (!freshMatch || freshMatch.status !== "in_progress") {
               done();
               return;

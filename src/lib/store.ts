@@ -285,7 +285,14 @@ export async function getLobbyFromDb(id: LobbyId): Promise<LobbyInfo | undefined
   const cached = lobbies.get(id);
   if (cached) return cached;
 
-  // Fall back to DB
+  return getLobbyFreshFromDb(id);
+}
+
+/**
+ * Always fetch lobby from DB (bypasses memory cache).
+ * Used by lobby long-poll to detect cross-instance state changes.
+ */
+export async function getLobbyFreshFromDb(id: LobbyId): Promise<LobbyInfo | undefined> {
   try {
     const l = await prisma.lobby.findUnique({ where: { id } });
     if (!l) return undefined;
@@ -465,6 +472,28 @@ export async function getMatchFromDb(id: MatchId): Promise<GameState | undefined
     return state;
   } catch (err) {
     console.error("[store] Failed to fetch match from DB:", err);
+    return undefined;
+  }
+}
+
+/**
+ * Always fetch match from DB (bypasses memory cache).
+ * Used by SSE polling to detect cross-instance state changes.
+ * Updates the in-memory cache if the DB version is newer.
+ */
+export async function getMatchFreshFromDb(id: MatchId): Promise<GameState | undefined> {
+  try {
+    const m = await prisma.match.findUnique({ where: { id } });
+    if (!m) return undefined;
+    const state = deserializeState(m.state as Record<string, unknown>);
+    // Update cache if DB has more events (i.e., is newer)
+    const cached = matches.get(id);
+    if (!cached || state.events.length > cached.events.length || state.status !== cached.status) {
+      matches.set(state.matchId, state);
+    }
+    return state;
+  } catch (err) {
+    console.error("[store] Failed to fetch fresh match from DB:", err);
     return undefined;
   }
 }
