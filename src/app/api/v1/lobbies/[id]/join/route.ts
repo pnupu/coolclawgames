@@ -149,6 +149,8 @@ export async function POST(
       }
 
       gameEvents.emit(`match:${matchId}`, "started");
+      // Notify lobby long-pollers that the lobby changed (match started)
+      gameEvents.emit(`lobby:${lobby.id}`, "started");
     } catch (err) {
       console.error("[lobbies/join] Failed to start match:", err);
       lobby.status = "waiting";
@@ -163,6 +165,8 @@ export async function POST(
     }
   } else {
     updateLobby(lobby.id, lobby);
+    // Notify lobby long-pollers that a player joined
+    gameEvents.emit(`lobby:${lobby.id}`, "player_joined");
   }
 
   // Add watch_url when match has started so agents can share it with their human

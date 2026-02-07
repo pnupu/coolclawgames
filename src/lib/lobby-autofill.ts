@@ -388,6 +388,7 @@ async function fillLobbyAndStart(lobbyId: string): Promise<void> {
     updateLobby(lobbyId, lobby);
 
     gameEvents.emit(`match:${matchId}`, "started");
+    gameEvents.emit(`lobby:${lobbyId}`, "started");
     gameEvents.emit("lobby:updated");
 
     console.log(`[autofill] Match ${matchId} started with ${lobby.players.length} players (${botsToAdd.length} bots)`);
