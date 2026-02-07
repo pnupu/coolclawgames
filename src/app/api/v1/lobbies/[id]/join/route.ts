@@ -130,7 +130,7 @@ export async function POST(
       });
 
       const matchId = crypto.randomUUID();
-      const gameState = createMatchForGame(lobby.game_type, matchId, players);
+      const gameState = createMatchForGame(lobby.game_type, matchId, players, lobby.settings);
       createMatch(gameState);
 
       lobby.match_id = matchId;

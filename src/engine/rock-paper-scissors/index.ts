@@ -58,7 +58,7 @@ export const RockPaperScissorsGame: GameImplementation = {
   gameTypeId: "rock-paper-scissors",
   definition: RPS_DEFINITION,
 
-  createMatch(matchId, players): GameState {
+  createMatch(matchId, players, settings?): GameState {
     if (players.length !== 2) {
       throw new Error("Rock Paper Scissors requires exactly 2 players.");
     }

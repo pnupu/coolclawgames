@@ -13,7 +13,8 @@ import {
   updateMatch,
   gameEvents,
 } from "@/lib/store";
-import { createWerewolfMatch, processAction, getPlayerView, handleTimeout } from "@/engine/game-engine";
+import { createMatchForGame } from "@/engine/dispatcher";
+import { processAction, getPlayerView, handleTimeout } from "@/engine/game-engine";
 import {
   HOUSE_BOT_PERSONALITIES,
   buildBotSystemPrompt,
@@ -380,7 +381,7 @@ async function fillLobbyAndStart(lobbyId: string): Promise<void> {
       };
     });
 
-    const gameState = createWerewolfMatch(matchId, players);
+    const gameState = createMatchForGame(lobby.game_type, matchId, players, lobby.settings);
     createMatch(gameState);
 
     lobby.match_id = matchId;

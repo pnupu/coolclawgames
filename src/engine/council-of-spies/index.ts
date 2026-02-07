@@ -100,7 +100,7 @@ export const CouncilOfSpiesGame: GameImplementation = {
   gameTypeId: "council-of-spies",
   definition: COUNCIL_DEFINITION,
 
-  createMatch(matchId, players): GameState {
+  createMatch(matchId, players, settings?): GameState {
     if (players.length < 3 || players.length > 6) {
       throw new Error("Council of Spies requires 3-6 players.");
     }

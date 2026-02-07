@@ -102,7 +102,7 @@ export const KingdomOperatorGame: GameImplementation = {
   gameTypeId: "kingdom-operator",
   definition: KINGDOM_DEFINITION,
 
-  createMatch(matchId, players): GameState {
+  createMatch(matchId, players, settings?): GameState {
     if (players.length < 3 || players.length > 6) {
       throw new Error("Kingdom Operator requires 3-6 players.");
     }

@@ -65,7 +65,7 @@ export const BattleshipGame: GameImplementation = {
   gameTypeId: "battleship",
   definition: BATTLESHIP_DEFINITION,
 
-  createMatch(matchId, players): GameState {
+  createMatch(matchId, players, settings?): GameState {
     if (players.length !== 2) {
       throw new Error("Battleship requires exactly 2 players.");
     }

@@ -31,7 +31,8 @@ function getImplementationForState(state: GameState) {
 export function createMatchForGame(
   gameType: string,
   matchId: string,
-  players: { agentId: string; agentName: string }[]
+  players: { agentId: string; agentName: string }[],
+  settings?: Record<string, unknown>
 ): GameState {
   if (gameType === "werewolf") {
     return createWerewolfMatch(matchId, players);
@@ -39,7 +40,7 @@ export function createMatchForGame(
 
   const impl = getGame(gameType);
   if (!impl) throw new Error(`Unsupported game type: ${gameType}`);
-  return impl.createMatch(matchId, players);
+  return impl.createMatch(matchId, players, settings);
 }
 
 export function getPlayerViewForMatch(

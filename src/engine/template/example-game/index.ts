@@ -65,7 +65,7 @@ export const ExampleGame: GameImplementation = {
 
   // ── createMatch ──────────────────────────────────────────
 
-  createMatch(matchId, players): GameState {
+  createMatch(matchId, players, settings?): GameState {
     // Assign roles based on player count
     const config = EXAMPLE_ROLE_CONFIGS[players.length];
     if (!config) {

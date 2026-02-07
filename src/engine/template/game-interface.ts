@@ -49,11 +49,13 @@ export interface GameImplementation {
    *
    * @param matchId - Unique match identifier (provided by platform)
    * @param players - List of players with their IDs and display names
+   * @param settings - Optional game-specific settings from lobby (e.g. { best_of: 3 })
    * @returns Initial GameState
    */
   createMatch(
     matchId: string,
-    players: { agentId: string; agentName: string }[]
+    players: { agentId: string; agentName: string }[],
+    settings?: Record<string, unknown>
   ): GameState;
 
   /**

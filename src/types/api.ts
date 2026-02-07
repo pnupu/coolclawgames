@@ -55,6 +55,8 @@ export interface GamesListResponse {
 export interface CreateLobbyRequest {
   game_type: GameTypeId;
   is_private?: boolean;
+  /** Game-specific settings (e.g. { best_of: 5 } for tic-tac-toe) */
+  settings?: Record<string, unknown>;
 }
 
 export interface LobbyInfo {
@@ -69,6 +71,8 @@ export interface LobbyInfo {
   is_private: boolean;
   invite_code?: string;
   match_id?: MatchId;
+  /** Game-specific settings passed at lobby creation */
+  settings?: Record<string, unknown>;
 }
 
 export interface CreateLobbyResponse {

@@ -103,7 +103,7 @@ export const FrontierConvoyGame: GameImplementation = {
   gameTypeId: "frontier-convoy",
   definition: FRONTIER_DEFINITION,
 
-  createMatch(matchId, players): GameState {
+  createMatch(matchId, players, settings?): GameState {
     if (players.length < 3 || players.length > 6) {
       throw new Error("Frontier Convoy requires 3-6 players.");
     }

@@ -31,10 +31,23 @@ const WIN_LINES = [
   [2, 4, 6],
 ];
 
+const DEFAULT_BEST_OF = 1;
+const MAX_BEST_OF = 9;
+/** Safety cap: max total games (including draws) before forcing a result */
+const MAX_TOTAL_GAMES_FACTOR = 2;
+
 interface TttPhaseData {
   board: Array<Mark | null>;
   marksByPlayer: Record<string, Mark>;
   moveCount: number;
+  /** Best-of-N series config (1 = single game) */
+  bestOf: number;
+  /** Series score keyed by mark: { X: 0, O: 0 } */
+  seriesScore: Record<string, number>;
+  /** How many individual games have been played */
+  gamesPlayed: number;
+  /** Who started the current game (player index into turnOrder) */
+  gameStarterIndex: number;
 }
 
 const TTT_DEFINITION: GameTypeDefinition = {
@@ -75,9 +88,22 @@ export const TicTacToeGame: GameImplementation = {
   gameTypeId: "tic-tac-toe",
   definition: TTT_DEFINITION,
 
-  createMatch(matchId, players): GameState {
+  createMatch(matchId, players, settings?): GameState {
     if (players.length !== 2) {
       throw new Error("Tic Tac Toe requires exactly 2 players.");
+    }
+
+    // Parse best_of from settings
+    let bestOf = DEFAULT_BEST_OF;
+    if (settings?.best_of !== undefined) {
+      const raw = Number(settings.best_of);
+      if (!Number.isInteger(raw) || raw < 1) {
+        throw new Error("best_of must be a positive odd integer.");
+      }
+      bestOf = Math.min(raw, MAX_BEST_OF);
+      // Force odd so there's always a decisive winner
+      if (bestOf % 2 === 0) bestOf += 1;
+      if (bestOf > MAX_BEST_OF) bestOf = MAX_BEST_OF;
     }
 
     const marksByPlayer: Record<string, Mark> = {
@@ -86,6 +112,7 @@ export const TicTacToeGame: GameImplementation = {
     };
     const now = Date.now();
 
+    const seriesLabel = bestOf > 1 ? ` (best of ${bestOf})` : "";
     const gameStarted: GameEvent = {
       id: crypto.randomUUID(),
       timestamp: now,
@@ -93,7 +120,7 @@ export const TicTacToeGame: GameImplementation = {
       phase: "move",
       round: 1,
       actor: null,
-      message: `${players[0].agentName} is X and starts. ${players[1].agentName} is O.`,
+      message: `${players[0].agentName} is X and starts. ${players[1].agentName} is O.${seriesLabel}`,
       visibility: "public",
     };
 
@@ -104,7 +131,9 @@ export const TicTacToeGame: GameImplementation = {
       phase: "move",
       round: 1,
       actor: null,
-      message: "Round 1: X to move. Use use_ability with target A1..C3.",
+      message: bestOf > 1
+        ? `Game 1 of ${bestOf} — Round 1: X to move.`
+        : "Round 1: X to move. Use use_ability with target A1..C3.",
       visibility: "public",
     };
 
@@ -120,6 +149,10 @@ export const TicTacToeGame: GameImplementation = {
       board: Array<Mark | null>(9).fill(null),
       marksByPlayer,
       moveCount: 0,
+      bestOf,
+      seriesScore: { X: 0, O: 0 },
+      gamesPlayed: 0,
+      gameStarterIndex: 0,
     };
 
     return {
@@ -163,6 +196,21 @@ export const TicTacToeGame: GameImplementation = {
           : undefined,
       }));
 
+    const privateInfo: Record<string, unknown> = {
+      your_mark: yourMark,
+      opponent_mark: opponentMark,
+      board,
+      board_hint: "Use targets A1..C3.",
+    };
+
+    // Include series info if best_of > 1
+    if (phaseData.bestOf > 1) {
+      privateInfo.best_of = phaseData.bestOf;
+      privateInfo.games_played = phaseData.gamesPlayed;
+      privateInfo.series_score = { ...phaseData.seriesScore };
+      privateInfo.wins_needed = Math.ceil(phaseData.bestOf / 2);
+    }
+
     return {
       match_id: state.matchId,
       status: state.status,
@@ -177,12 +225,7 @@ export const TicTacToeGame: GameImplementation = {
             "use_ability",
           ]
         : [],
-      private_info: {
-        your_mark: yourMark,
-        opponent_mark: opponentMark,
-        board,
-        board_hint: "Use targets A1..C3.",
-      },
+      private_info: privateInfo,
       messages_since_last_poll: messages,
       poll_after_ms: yourTurn ? 0 : POLL_INTERVAL_MS,
       turn_timeout_ms: TURN_TIMEOUT_MS,
@@ -333,31 +376,15 @@ export const TicTacToeGame: GameImplementation = {
       turnStartedAt: Date.now(),
     };
 
+    // Check for board winner or draw
     const winnerMark = checkBoardWinner(board);
-    if (winnerMark) {
-      const winnerId = Object.entries(phaseData.marksByPlayer).find(
-        ([, value]) => value === winnerMark
-      )?.[0];
+    const boardFull = board.every((v) => v !== null);
 
-      if (!winnerId) return withMove;
-      const winnerPlayer = state.players.find((p) => p.agentId === winnerId);
-      const result: WinResult = {
-        team: winnerMark,
-        reason: `${winnerPlayer?.agentName ?? "A player"} won with ${winnerMark}.`,
-        winners: [winnerId],
-      };
-      return endGame(withMove, result);
+    if (winnerMark || boardFull) {
+      return handleBoardResult(withMove, phaseData, winnerMark, board);
     }
 
-    if (board.every((cellValue) => cellValue !== null)) {
-      const result: WinResult = {
-        team: "draw",
-        reason: "The board is full. The game ends in a draw.",
-        winners: [],
-      };
-      return endGame(withMove, result);
-    }
-
+    // No result yet — advance to next turn
     const nextTurnIndex = (state.currentTurnIndex + 1) % state.turnOrder.length;
     const phaseEvent: GameEvent = {
       id: crypto.randomUUID(),
@@ -419,6 +446,8 @@ export const TicTacToeGame: GameImplementation = {
   },
 };
 
+// ─── Helpers ────────────────────────────────────────────────────
+
 function parseCell(target: string | undefined): Cell | null {
   if (!target) return null;
   const normalized = target.trim().toUpperCase();
@@ -431,11 +460,11 @@ function getPhaseData(state: GameState): TttPhaseData {
     : Array<Mark | null>(9).fill(null);
   const marksByPlayer = (state.phaseData.marksByPlayer as Record<string, Mark>) ?? {};
   const moveCount = (state.phaseData.moveCount as number) ?? 0;
-  return {
-    board,
-    marksByPlayer,
-    moveCount,
-  };
+  const bestOf = (state.phaseData.bestOf as number) ?? DEFAULT_BEST_OF;
+  const seriesScore = (state.phaseData.seriesScore as Record<string, number>) ?? { X: 0, O: 0 };
+  const gamesPlayed = (state.phaseData.gamesPlayed as number) ?? 0;
+  const gameStarterIndex = (state.phaseData.gameStarterIndex as number) ?? 0;
+  return { board, marksByPlayer, moveCount, bestOf, seriesScore, gamesPlayed, gameStarterIndex };
 }
 
 function formatBoard(board: Array<Mark | null>): string {
@@ -458,7 +487,7 @@ function checkBoardWinner(board: Array<Mark | null>): Mark | null {
   return null;
 }
 
-function endGame(state: GameState, result: WinResult): GameState {
+function endMatch(state: GameState, result: WinResult): GameState {
   const gameOverEvent: GameEvent = {
     id: crypto.randomUUID(),
     timestamp: Date.now(),
@@ -474,5 +503,179 @@ function endGame(state: GameState, result: WinResult): GameState {
     status: "finished",
     winner: result,
     events: [...state.events, gameOverEvent],
+  };
+}
+
+/**
+ * Handle the result of a single board (win or draw).
+ * In a best-of-1 this ends the match. In a series it may start a new game.
+ */
+function handleBoardResult(
+  state: GameState,
+  phaseData: TttPhaseData,
+  winnerMark: Mark | null,
+  board: Array<Mark | null>,
+): GameState {
+  const { bestOf, seriesScore, gamesPlayed, marksByPlayer, gameStarterIndex } = phaseData;
+  const newGamesPlayed = gamesPlayed + 1;
+  const newScore = { ...seriesScore };
+  const winsNeeded = Math.ceil(bestOf / 2);
+  const maxTotalGames = bestOf * MAX_TOTAL_GAMES_FACTOR;
+
+  const now = Date.now();
+
+  if (winnerMark) {
+    // Someone won this game
+    newScore[winnerMark] = (newScore[winnerMark] ?? 0) + 1;
+
+    const winnerId = Object.entries(marksByPlayer).find(([, v]) => v === winnerMark)?.[0];
+    const winnerPlayer = state.players.find((p) => p.agentId === winnerId);
+
+    const boardResultEvent: GameEvent = {
+      id: crypto.randomUUID(),
+      timestamp: now,
+      type: "vote_result",
+      phase: state.phase,
+      round: state.round,
+      actor: null,
+      message: bestOf > 1
+        ? `${winnerPlayer?.agentName ?? winnerMark} wins game ${newGamesPlayed}! Score: X ${newScore.X ?? 0} – O ${newScore.O ?? 0}`
+        : `${winnerPlayer?.agentName ?? "A player"} won with ${winnerMark}.`,
+      visibility: "public",
+    };
+
+    const withResult: GameState = {
+      ...state,
+      events: [...state.events, boardResultEvent],
+      phaseData: {
+        ...state.phaseData,
+        board,
+        seriesScore: newScore,
+        gamesPlayed: newGamesPlayed,
+      },
+    };
+
+    // Check if series is decided
+    if (bestOf <= 1 || newScore[winnerMark] >= winsNeeded) {
+      const seriesReason = bestOf > 1
+        ? `${winnerPlayer?.agentName ?? winnerMark} wins the series ${newScore[winnerMark]} – ${newScore[winnerMark === "X" ? "O" : "X"] ?? 0}!`
+        : `${winnerPlayer?.agentName ?? "A player"} won with ${winnerMark}.`;
+      return endMatch(withResult, {
+        team: winnerMark,
+        reason: seriesReason,
+        winners: winnerId ? [winnerId] : [],
+      });
+    }
+
+    // Series continues — start new game
+    return startNewGameInSeries(withResult, newGamesPlayed, newScore, gameStarterIndex);
+
+  } else {
+    // Draw
+    const drawEvent: GameEvent = {
+      id: crypto.randomUUID(),
+      timestamp: now,
+      type: "vote_result",
+      phase: state.phase,
+      round: state.round,
+      actor: null,
+      message: bestOf > 1
+        ? `Game ${newGamesPlayed} is a draw! Score: X ${newScore.X ?? 0} – O ${newScore.O ?? 0}. Draws don't count.`
+        : "The board is full. The game ends in a draw.",
+      visibility: "public",
+    };
+
+    const withResult: GameState = {
+      ...state,
+      events: [...state.events, drawEvent],
+      phaseData: {
+        ...state.phaseData,
+        board,
+        seriesScore: newScore,
+        gamesPlayed: newGamesPlayed,
+      },
+    };
+
+    // Single game — end as draw
+    if (bestOf <= 1) {
+      return endMatch(withResult, {
+        team: "draw",
+        reason: "The board is full. The game ends in a draw.",
+        winners: [],
+      });
+    }
+
+    // Safety cap for infinite draws
+    if (newGamesPlayed >= maxTotalGames) {
+      const xScore = newScore.X ?? 0;
+      const oScore = newScore.O ?? 0;
+      if (xScore > oScore) {
+        const xId = Object.entries(marksByPlayer).find(([, v]) => v === "X")?.[0];
+        return endMatch(withResult, {
+          team: "X",
+          reason: `Series capped at ${newGamesPlayed} games. X wins ${xScore} – ${oScore}.`,
+          winners: xId ? [xId] : [],
+        });
+      } else if (oScore > xScore) {
+        const oId = Object.entries(marksByPlayer).find(([, v]) => v === "O")?.[0];
+        return endMatch(withResult, {
+          team: "O",
+          reason: `Series capped at ${newGamesPlayed} games. O wins ${oScore} – ${xScore}.`,
+          winners: oId ? [oId] : [],
+        });
+      }
+      return endMatch(withResult, {
+        team: "draw",
+        reason: `Series capped at ${newGamesPlayed} games. Final score: X ${xScore} – O ${oScore}. Draw.`,
+        winners: [],
+      });
+    }
+
+    // Series continues
+    return startNewGameInSeries(withResult, newGamesPlayed, newScore, gameStarterIndex);
+  }
+}
+
+/**
+ * Reset the board and swap who goes first for the next game in the series.
+ */
+function startNewGameInSeries(
+  state: GameState,
+  gamesPlayed: number,
+  seriesScore: Record<string, number>,
+  prevGameStarterIndex: number,
+): GameState {
+  const now = Date.now();
+  const newStarterIndex = (prevGameStarterIndex + 1) % state.turnOrder.length;
+  const starterName = state.players.find(
+    (p) => p.agentId === state.turnOrder[newStarterIndex]
+  )?.agentName ?? "Next player";
+
+  const newGameEvent: GameEvent = {
+    id: crypto.randomUUID(),
+    timestamp: now,
+    type: "phase_change",
+    phase: "move",
+    round: 1,
+    actor: null,
+    message: `Game ${gamesPlayed + 1} begins! ${starterName} moves first. Score: X ${seriesScore.X ?? 0} – O ${seriesScore.O ?? 0}`,
+    visibility: "public",
+  };
+
+  return {
+    ...state,
+    round: 1,
+    currentTurnIndex: newStarterIndex,
+    events: [...state.events, newGameEvent],
+    players: state.players.map((p) => ({ ...p, actionsThisPhase: [] })),
+    phaseData: {
+      ...state.phaseData,
+      board: Array(9).fill(null),
+      moveCount: 0,
+      gamesPlayed,
+      seriesScore,
+      gameStarterIndex: newStarterIndex,
+    },
+    turnStartedAt: now,
   };
 }

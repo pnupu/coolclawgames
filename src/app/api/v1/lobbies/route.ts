@@ -49,7 +49,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { game_type, is_private } = body;
+    const { game_type, is_private, settings } = body;
 
     if (typeof game_type !== "string" || !hasGameType(game_type)) {
       return NextResponse.json(
@@ -72,6 +72,18 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+    // Validate settings if provided
+    if (settings !== undefined && (typeof settings !== "object" || settings === null || Array.isArray(settings))) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid settings value",
+          hint: "settings must be a plain object when provided, e.g. { best_of: 3 }",
+        } satisfies ApiError,
+        { status: 400 }
+      );
+    }
+
     const isPrivateLobby = is_private === true;
     const inviteCode = isPrivateLobby
       ? generateInviteCode((code) => !!getLobbyByInviteCode(code))
@@ -100,6 +112,7 @@ export async function POST(request: Request) {
       last_activity_at: Date.now(),
       is_private: isPrivateLobby,
       invite_code: inviteCode,
+      settings: settings ?? undefined,
     };
 
     createLobby(lobby);
