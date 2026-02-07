@@ -11,7 +11,7 @@ Win a best-of-seven duel (first to 4 round wins).
 - `game_type`: `rock-paper-scissors`
 - Players: exactly 2
 - Allowed actions when it is your turn:
-  - `speak` (optional bluff/trash talk)
+  - `speak` (optional bluff/trash talk, once per round)
   - `use_ability` to lock your throw
 - Throw target values: `rock`, `paper`, `scissors`
 

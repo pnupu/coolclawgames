@@ -9,6 +9,7 @@ import {
   canAcceptHumanInputForMatch,
   createMatchForGame,
   getPlayerViewForMatch,
+  getSpectatorViewForMatch,
   handlePhaseDeadlineForMatch,
   handleTimeoutForMatch,
   processActionForMatch,
@@ -68,6 +69,12 @@ function getHumanCadence(view: PlayerView, fallback: number): number {
     }
   }
   return fallback;
+}
+
+function battleshipCell(index: number): string {
+  const row = Math.floor(index / 4);
+  const col = (index % 4) + 1;
+  return `${String.fromCharCode("A".charCodeAt(0) + row)}${col}`;
 }
 
 function playFullKingdomRound(state: GameState): GameState {
@@ -168,6 +175,7 @@ async function main() {
   assert(gameIds.includes("werewolf"), "contains werewolf");
   assert(gameIds.includes("tic-tac-toe"), "contains tic-tac-toe");
   assert(gameIds.includes("rock-paper-scissors"), "contains rock-paper-scissors");
+  assert(gameIds.includes("battleship"), "contains battleship");
   assert(gameIds.includes("kingdom-operator"), "contains kingdom-operator");
   assert(gameIds.includes("frontier-convoy"), "contains frontier-convoy");
   assert(gameIds.includes("council-of-spies"), "contains council-of-spies");
@@ -181,7 +189,33 @@ async function main() {
   let ttt = createMatchForGame("tic-tac-toe", "ttt-test-1", tPlayers);
   const tView1 = getPlayerViewForMatch(ttt, "t1");
   assert(tView1.your_turn, "X player starts first");
+  assert(tView1.available_actions.includes("speak"), "X can speak before moving");
   assert(tView1.available_actions.includes("use_ability"), "X has move action");
+
+  ttt = processActionForMatch(ttt, "t1", {
+    action: "speak",
+    message: "Center pressure starts now.",
+  });
+  assert(
+    ttt.events.some((e) => e.type === "player_speak" && e.actor === "t1"),
+    "tic-tac-toe records speak event"
+  );
+  const tttSpec = getSpectatorViewForMatch(ttt, true);
+  assert(
+    tttSpec.events.some(
+      (e) => e.type === "player_speak" && e.message.includes("Center pressure")
+    ),
+    "tic-tac-toe speak is visible to spectators"
+  );
+  expectThrow(
+    () =>
+      processActionForMatch(ttt, "t1", {
+        action: "speak",
+        message: "Second message same turn",
+      }),
+    "rejects second tic-tac-toe speak in same turn",
+    "already spoke"
+  );
 
   expectThrow(
     () =>
@@ -221,6 +255,20 @@ async function main() {
     action: "speak",
     message: "I will absolutely play rock.",
   });
+  expectThrow(
+    () =>
+      processActionForMatch(rps, "r1", {
+        action: "speak",
+        message: "Double bluff spam",
+      }),
+    "rejects second rps speak in same round",
+    "already spoke"
+  );
+  const rpsSpec = getSpectatorViewForMatch(rps, true);
+  assert(
+    rpsSpec.events.some((e) => e.type === "player_speak"),
+    "rps speak is visible to spectators"
+  );
   rps = processActionForMatch(rps, "r1", { action: "use_ability", target: "rock" });
   rps = processActionForMatch(rps, "r2", { action: "use_ability", target: "scissors" });
 
@@ -242,8 +290,78 @@ async function main() {
     "rps timeout locks random throw"
   );
 
-  // ── 4. Kingdom Operator ───────────────────────────
-  section("4. Kingdom Operator");
+  // ── 4. Battleship ─────────────────────────────────
+  section("4. Battleship");
+  const bPlayers = [
+    { agentId: "b1", agentName: "Admiral Blue" },
+    { agentId: "b2", agentName: "Commodore Red" },
+  ];
+  let battleship = createMatchForGame("battleship", "battleship-test-1", bPlayers);
+  assert(battleship.phase === "salvo", "battleship starts in salvo phase");
+
+  const bView = getPlayerViewForMatch(battleship, "b1");
+  assert(bView.your_turn, "battleship first player has turn");
+  assert(bView.available_actions.includes("speak"), "battleship supports speak action");
+  assert(bView.available_actions.includes("use_ability"), "battleship supports firing action");
+
+  battleship = processActionForMatch(battleship, "b1", {
+    action: "speak",
+    message: "You won't find my fleet.",
+  });
+  assert(
+    battleship.events.some((e) => e.type === "player_speak" && e.actor === "b1"),
+    "battleship logs speak event"
+  );
+  const battleshipSpec = getSpectatorViewForMatch(battleship, true);
+  assert(
+    battleshipSpec.events.some(
+      (e) => e.type === "player_speak" && e.message.includes("won't find my fleet")
+    ),
+    "battleship speak is visible to spectators"
+  );
+
+  const initialShips = ((battleship.phaseData as {
+    shipCellsByPlayer: Record<string, number[]>;
+  }).shipCellsByPlayer["b2"] ?? []).map((idx) => battleshipCell(idx));
+  let sinkIdx = 0;
+  let guard = 0;
+
+  while (battleship.status === "in_progress" && guard < 20) {
+    const current = battleship.turnOrder[battleship.currentTurnIndex];
+    if (current === "b1") {
+      const target = initialShips[sinkIdx];
+      sinkIdx++;
+      if (!target) break;
+      battleship = processActionForMatch(battleship, "b1", {
+        action: "use_ability",
+        target,
+      });
+    } else {
+      const shotsByB2 = new Set(
+        ((battleship.phaseData as { shotsByPlayer: Record<string, number[]> }).shotsByPlayer[
+          "b2"
+        ] ?? [])
+      );
+      const idx = [...Array(16).keys()].find((candidate) => !shotsByB2.has(candidate)) ?? 0;
+      battleship = processActionForMatch(battleship, "b2", {
+        action: "use_ability",
+        target: battleshipCell(idx),
+      });
+    }
+    guard++;
+  }
+
+  assert(battleship.status === "finished", "battleship reaches a finished state");
+  assert(battleship.winner?.winners.includes("b1") ?? false, "battleship winner is b1");
+  assert(
+    battleship.events.some(
+      (e) => e.type === "player_ability" && e.message.includes("HIT")
+    ),
+    "battleship hit events are emitted"
+  );
+
+  // ── 5. Kingdom Operator ───────────────────────────
+  section("5. Kingdom Operator");
   const kPlayers = [
     { agentId: "k1", agentName: "Atlas" },
     { agentId: "k2", agentName: "Boreal" },
@@ -323,8 +441,8 @@ async function main() {
     "forced order message is explicit"
   );
 
-  // ── 5. Frontier Convoy ───────────────────────────
-  section("5. Frontier Convoy");
+  // ── 6. Frontier Convoy ───────────────────────────
+  section("6. Frontier Convoy");
   const fPlayers = [
     { agentId: "f1", agentName: "Alpha" },
     { agentId: "f2", agentName: "Beta" },
@@ -430,8 +548,8 @@ async function main() {
     "frontier forced order is explicit"
   );
 
-  // ── 6. Council Of Spies ───────────────────────────
-  section("6. Council Of Spies");
+  // ── 7. Council Of Spies ───────────────────────────
+  section("7. Council Of Spies");
   const sPlayers = [
     { agentId: "s1", agentName: "Obsidian" },
     { agentId: "s2", agentName: "Cipher" },
@@ -528,8 +646,8 @@ async function main() {
     "spies forced order is explicit"
   );
 
-  // ── 7. Human Input Route (Kingdom) ────────────────────────
-  section("7. Human Input Route (Kingdom)");
+  // ── 8. Human Input Route (Kingdom) ────────────────────────
+  section("8. Human Input Route (Kingdom)");
   const kingdomRouteMatchId = "kingdom-route-test-1";
   let kingdomRouteState = createMatchForGame("kingdom-operator", kingdomRouteMatchId, kPlayers);
 
@@ -571,8 +689,8 @@ async function main() {
     false;
   assert(storedKingdomDirectiveEvent, "human input route persisted kingdom directive event");
 
-  // ── 8. Human Input Route (Frontier) ────────────────────────
-  section("8. Human Input Route (Frontier)");
+  // ── 9. Human Input Route (Frontier) ────────────────────────
+  section("9. Human Input Route (Frontier)");
   const frontierRouteMatchId = "frontier-route-test-1";
   let frontierRouteState = createMatchForGame("frontier-convoy", frontierRouteMatchId, fPlayers);
 

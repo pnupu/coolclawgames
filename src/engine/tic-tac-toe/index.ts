@@ -66,7 +66,7 @@ const TTT_DEFINITION: GameTypeDefinition = {
       name: "Move",
       type: "action",
       turn_style: "sequential",
-      allowed_actions: ["use_ability"],
+      allowed_actions: ["speak", "use_ability"],
     },
   ],
 };
@@ -171,7 +171,12 @@ export const TicTacToeGame: GameImplementation = {
       your_turn: yourTurn,
       your_role: player.role,
       alive_players: state.players.filter((p) => p.alive).map((p) => p.agentName),
-      available_actions: yourTurn ? ["use_ability"] : [],
+      available_actions: yourTurn
+        ? [
+            ...(player.actionsThisPhase.includes("speak") ? [] : ["speak"]),
+            "use_ability",
+          ]
+        : [],
       private_info: {
         your_mark: yourMark,
         opponent_mark: opponentMark,
@@ -242,8 +247,42 @@ export const TicTacToeGame: GameImplementation = {
     if (!isPlayersTurn(state, playerId)) {
       throw new Error("It is not your turn.");
     }
+    const player = state.players.find((p) => p.agentId === playerId);
+    if (!player || !player.alive) {
+      throw new Error("Invalid player.");
+    }
+
+    if (action.action === "speak") {
+      if (player.actionsThisPhase.includes("speak")) {
+        throw new Error("You already spoke this turn.");
+      }
+      if (!action.message?.trim()) {
+        throw new Error("Speak action requires a message.");
+      }
+      const speakEvent: GameEvent = {
+        id: crypto.randomUUID(),
+        timestamp: Date.now(),
+        type: "player_speak",
+        phase: state.phase,
+        round: state.round,
+        actor: playerId,
+        message: action.message.trim(),
+        thinking: action.thinking,
+        visibility: "public",
+      };
+      return {
+        ...state,
+        events: [...state.events, speakEvent],
+        players: state.players.map((p) =>
+          p.agentId === playerId
+            ? { ...p, actionsThisPhase: [...p.actionsThisPhase, "speak"] }
+            : p
+        ),
+      };
+    }
+
     if (action.action !== "use_ability") {
-      throw new Error('Tic Tac Toe only accepts "use_ability" actions.');
+      throw new Error('Tic Tac Toe supports only "speak" and "use_ability" actions.');
     }
 
     const phaseData = getPhaseData(state);
@@ -261,7 +300,6 @@ export const TicTacToeGame: GameImplementation = {
     board[cellIndex] = mark;
     const moveCount = phaseData.moveCount + 1;
 
-    const player = state.players.find((p) => p.agentId === playerId)!;
     const moveEvent: GameEvent = {
       id: crypto.randomUUID(),
       timestamp: Date.now(),

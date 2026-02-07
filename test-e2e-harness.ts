@@ -45,6 +45,24 @@ const RUN_ID = Date.now().toString(36).slice(-5);
 const PROFILES: readonly StrategyProfile[] = ["aggressive", "balanced", "defensive"];
 const COACHED_GAMES = new Set(["kingdom-operator", "frontier-convoy", "council-of-spies"]);
 const TTT_CELLS = ["A1", "A2", "A3", "B1", "B2", "B3", "C1", "C2", "C3"] as const;
+const BATTLESHIP_CELLS = [
+  "A1",
+  "A2",
+  "A3",
+  "A4",
+  "B1",
+  "B2",
+  "B3",
+  "B4",
+  "C1",
+  "C2",
+  "C3",
+  "C4",
+  "D1",
+  "D2",
+  "D3",
+  "D4",
+] as const;
 const TTT_WIN_LINES = [
   [0, 1, 2],
   [3, 4, 5],
@@ -64,6 +82,7 @@ const GAME_SCENARIOS: Array<{
   { id: "werewolf", tag: "ww", maxSteps: 260 },
   { id: "tic-tac-toe", tag: "ttt", maxSteps: 40 },
   { id: "rock-paper-scissors", tag: "rps", maxSteps: 70 },
+  { id: "battleship", tag: "btl", maxSteps: 120 },
   { id: "kingdom-operator", tag: "kng", maxSteps: 320 },
   { id: "frontier-convoy", tag: "frn", maxSteps: 320 },
   { id: "council-of-spies", tag: "spy", maxSteps: 320 },
@@ -212,6 +231,69 @@ function chooseTttCell(view: PlayerView): string {
     TTT_CELLS.find((cell, index) => board[index] === null) ??
     "A1"
   );
+}
+
+function parseBattleshipEnemyBoard(board: unknown): Array<"?" | "X" | "o"> {
+  if (typeof board !== "string") return Array<"?" | "X" | "o">(16).fill("?");
+  const tokens = board
+    .replace(/\n/g, " ")
+    .split(/\s+/)
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .slice(0, 16);
+
+  while (tokens.length < 16) tokens.push("?");
+
+  return tokens.map((token) => {
+    if (token === "X" || token === "o") return token;
+    return "?";
+  });
+}
+
+function chooseBattleshipTarget(view: PlayerView, agentName: string): string {
+  const board = parseBattleshipEnemyBoard(view.private_info["enemy_board"]);
+  const unknown = board
+    .map((token, idx) => ({ token, idx }))
+    .filter((entry) => entry.token === "?")
+    .map((entry) => entry.idx);
+
+  if (unknown.length === 0) return "A1";
+
+  const hitCells = board
+    .map((token, idx) => ({ token, idx }))
+    .filter((entry) => entry.token === "X")
+    .map((entry) => entry.idx);
+
+  const neighbors: number[] = [];
+  for (const hit of hitCells) {
+    const row = Math.floor(hit / 4);
+    const col = hit % 4;
+    const candidates = [
+      row > 0 ? hit - 4 : null,
+      row < 3 ? hit + 4 : null,
+      col > 0 ? hit - 1 : null,
+      col < 3 ? hit + 1 : null,
+    ].filter((v): v is number => v !== null);
+    for (const idx of candidates) {
+      if (board[idx] === "?") neighbors.push(idx);
+    }
+  }
+
+  if (neighbors.length > 0) {
+    return BATTLESHIP_CELLS[
+      neighbors[hashText(`${agentName}:btl:neighbor:${view.round}`) % neighbors.length]
+    ];
+  }
+
+  const preferred = [5, 6, 9, 10];
+  const preferredUnknown = preferred.filter((idx) => board[idx] === "?");
+  if (preferredUnknown.length > 0) {
+    return BATTLESHIP_CELLS[
+      preferredUnknown[hashText(`${agentName}:btl:center:${view.round}`) % preferredUnknown.length]
+    ];
+  }
+
+  return BATTLESHIP_CELLS[unknown[hashText(`${agentName}:btl:any:${view.round}`) % unknown.length]];
 }
 
 function chooseRpsMove(
@@ -419,6 +501,15 @@ function chooseAction(
         action: "use_ability",
         target: chooseRpsMove(view, agentName, profile),
         thinking: `E2E harness: adaptive throw (${profile})`,
+      };
+    }
+
+    if (gameType === "battleship") {
+      return {
+        action: "use_ability",
+        target: chooseBattleshipTarget(view, agentName),
+        message: "Salvo away.",
+        thinking: `E2E harness: battleship targeting (${profile})`,
       };
     }
 

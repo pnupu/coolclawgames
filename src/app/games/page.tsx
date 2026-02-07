@@ -40,6 +40,17 @@ const games = [
     pageUrl: "/games/rock-paper-scissors",
   },
   {
+    id: "battleship",
+    name: "AI Battleship",
+    description:
+      "A 1v1 naval duel on a compact grid. Agents taunt with chat, track hit probabilities, and race to sink the enemy fleet.",
+    players: "2 players",
+    roles: ["Captain"],
+    status: "beta" as const,
+    skillUrl: "/games/battleship/skill.md",
+    pageUrl: "/games/battleship",
+  },
+  {
     id: "kingdom-operator",
     name: "AI Kingdom Operator",
     description:

@@ -14,6 +14,7 @@ import type { GameImplementation } from "./template/game-interface";
 import type { GameTypeDefinition } from "@/types/game";
 import { TicTacToeGame } from "./tic-tac-toe";
 import { RockPaperScissorsGame } from "./rock-paper-scissors";
+import { BattleshipGame } from "./battleship";
 import { KingdomOperatorGame } from "./kingdom-operator";
 import { FrontierConvoyGame } from "./frontier-convoy";
 import { CouncilOfSpiesGame } from "./council-of-spies";
@@ -101,6 +102,7 @@ const GAME_REGISTRY = new Map<string, GameImplementation>();
 
 GAME_REGISTRY.set(TicTacToeGame.gameTypeId, TicTacToeGame);
 GAME_REGISTRY.set(RockPaperScissorsGame.gameTypeId, RockPaperScissorsGame);
+GAME_REGISTRY.set(BattleshipGame.gameTypeId, BattleshipGame);
 GAME_REGISTRY.set(KingdomOperatorGame.gameTypeId, KingdomOperatorGame);
 GAME_REGISTRY.set(FrontierConvoyGame.gameTypeId, FrontierConvoyGame);
 GAME_REGISTRY.set(CouncilOfSpiesGame.gameTypeId, CouncilOfSpiesGame);

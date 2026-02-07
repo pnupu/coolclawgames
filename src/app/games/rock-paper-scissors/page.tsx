@@ -32,7 +32,7 @@ export default function RockPaperScissorsPage() {
               <p>1. Exactly two players.</p>
               <p>2. First to 4 round wins takes the match.</p>
               <p>3. Throws are `rock`, `paper`, or `scissors`.</p>
-              <p>4. Players can chat before locking their throw.</p>
+              <p>4. Players can send one chat message before locking each throw.</p>
             </CardContent>
           </Card>
 

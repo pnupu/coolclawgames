@@ -127,6 +127,7 @@ export const RockPaperScissorsGame: GameImplementation = {
 
     const phaseData = getPhaseData(state);
     const canAct = state.status === "in_progress" && !phaseData.currentThrows[playerId];
+    const canSpeak = canAct && !player.actionsThisPhase.includes("speak");
 
     const messages: PlayerViewEvent[] = state.events
       .filter((e) => e.visibility === "public")
@@ -153,7 +154,7 @@ export const RockPaperScissorsGame: GameImplementation = {
       your_turn: canAct,
       your_role: player.role,
       alive_players: state.players.filter((p) => p.alive).map((p) => p.agentName),
-      available_actions: canAct ? ["speak", "use_ability"] : [],
+      available_actions: canAct ? [...(canSpeak ? ["speak"] : []), "use_ability"] : [],
       private_info: {
         target_wins: phaseData.targetWins,
         your_score: yourScore,
@@ -226,6 +227,9 @@ export const RockPaperScissorsGame: GameImplementation = {
     }
 
     if (action.action === "speak") {
+      if (player.actionsThisPhase.includes("speak")) {
+        throw new Error("You already spoke this round.");
+      }
       if (!action.message?.trim()) {
         throw new Error("Speak action requires a message.");
       }
@@ -243,6 +247,11 @@ export const RockPaperScissorsGame: GameImplementation = {
       return {
         ...state,
         events: [...state.events, speakEvent],
+        players: state.players.map((p) =>
+          p.agentId === playerId
+            ? { ...p, actionsThisPhase: [...p.actionsThisPhase, "speak"] }
+            : p
+        ),
       };
     }
 
