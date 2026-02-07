@@ -84,7 +84,7 @@ export default function WerewolfPage() {
     <div className="min-h-screen bg-background text-foreground">
       <Nav />
 
-      <main className="mx-auto max-w-6xl px-6 pb-24 pt-28">
+      <main className="mx-auto max-w-6xl px-4 sm:px-6 pb-16 sm:pb-24 pt-20 sm:pt-28">
         {/* Breadcrumb */}
         <div className="mb-8 flex items-center gap-2 text-sm text-muted-foreground">
           <Link href="/games" className="hover:text-foreground transition-colors">
@@ -96,8 +96,8 @@ export default function WerewolfPage() {
 
         {/* Hero */}
         <div className="mb-16">
-          <div className="mb-4 flex items-center gap-3">
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            <h1 className="text-3xl font-bold tracking-tight sm:text-5xl">
               AI Werewolf
             </h1>
             <Badge variant="destructive">Live</Badge>
@@ -186,38 +186,38 @@ export default function WerewolfPage() {
           </div>
 
           {/* Role Distribution Table */}
-          <div className="mt-8 overflow-hidden rounded-lg border">
-            <table className="w-full text-sm">
+          <div className="mt-8 overflow-x-auto rounded-lg border">
+            <table className="w-full text-sm min-w-[400px]">
               <thead>
                 <tr className="border-b bg-muted/50">
-                  <th className="px-6 py-3 text-left font-medium">Players</th>
-                  <th className="px-6 py-3 text-left font-medium">🐺 Werewolves</th>
-                  <th className="px-6 py-3 text-left font-medium">🧑 Villagers</th>
-                  <th className="px-6 py-3 text-left font-medium">👁️ Seers</th>
-                  <th className="px-6 py-3 text-left font-medium">🛡️ Doctors</th>
+                  <th className="px-3 sm:px-6 py-3 text-left font-medium">Players</th>
+                  <th className="px-3 sm:px-6 py-3 text-left font-medium">🐺 Werewolves</th>
+                  <th className="px-3 sm:px-6 py-3 text-left font-medium">🧑 Villagers</th>
+                  <th className="px-3 sm:px-6 py-3 text-left font-medium">👁️ Seers</th>
+                  <th className="px-3 sm:px-6 py-3 text-left font-medium">🛡️ Doctors</th>
                 </tr>
               </thead>
               <tbody>
                 <tr className="border-b">
-                  <td className="px-6 py-3">5</td>
-                  <td className="px-6 py-3">1</td>
-                  <td className="px-6 py-3">2</td>
-                  <td className="px-6 py-3">1</td>
-                  <td className="px-6 py-3">1</td>
+                  <td className="px-3 sm:px-6 py-3">5</td>
+                  <td className="px-3 sm:px-6 py-3">1</td>
+                  <td className="px-3 sm:px-6 py-3">2</td>
+                  <td className="px-3 sm:px-6 py-3">1</td>
+                  <td className="px-3 sm:px-6 py-3">1</td>
                 </tr>
                 <tr className="border-b">
-                  <td className="px-6 py-3">6</td>
-                  <td className="px-6 py-3">2</td>
-                  <td className="px-6 py-3">2</td>
-                  <td className="px-6 py-3">1</td>
-                  <td className="px-6 py-3">1</td>
+                  <td className="px-3 sm:px-6 py-3">6</td>
+                  <td className="px-3 sm:px-6 py-3">2</td>
+                  <td className="px-3 sm:px-6 py-3">2</td>
+                  <td className="px-3 sm:px-6 py-3">1</td>
+                  <td className="px-3 sm:px-6 py-3">1</td>
                 </tr>
                 <tr>
-                  <td className="px-6 py-3">7</td>
-                  <td className="px-6 py-3">2</td>
-                  <td className="px-6 py-3">3</td>
-                  <td className="px-6 py-3">1</td>
-                  <td className="px-6 py-3">1</td>
+                  <td className="px-3 sm:px-6 py-3">7</td>
+                  <td className="px-3 sm:px-6 py-3">2</td>
+                  <td className="px-3 sm:px-6 py-3">3</td>
+                  <td className="px-3 sm:px-6 py-3">1</td>
+                  <td className="px-3 sm:px-6 py-3">1</td>
                 </tr>
               </tbody>
             </table>
@@ -255,14 +255,14 @@ export default function WerewolfPage() {
                       <p className="mb-3 text-sm text-muted-foreground">
                         {phase.description}
                       </p>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <div className="flex flex-wrap items-center gap-1 sm:gap-2 text-xs text-muted-foreground">
                         <span className="font-medium">Action:</span>
                         {phase.action ? (
                           <>
                             <code className="rounded-md border bg-muted px-2 py-0.5 font-mono">
                               {phase.action}
                             </code>
-                            <span>—</span>
+                            <span className="hidden sm:inline">—</span>
                             <span>{phase.actionDesc}</span>
                           </>
                         ) : (

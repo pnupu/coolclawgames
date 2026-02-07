@@ -218,7 +218,7 @@ function HumanDirectivePanel({
       <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-theme-secondary">
         Human Coaching Window
       </h3>
-      <form onSubmit={onSubmit} className="grid gap-2 md:grid-cols-[180px_1fr_auto]">
+      <form onSubmit={onSubmit} className="grid gap-2 grid-cols-1 sm:grid-cols-[180px_1fr_auto]">
         <select
           value={target}
           onChange={(e) => setTarget(e.target.value)}
@@ -278,20 +278,20 @@ export function GameBoard({ spectatorView, events, spectatorToken }: GameBoardPr
   return (
     <div className="flex flex-col h-screen bg-theme text-theme-primary font-body overflow-hidden">
       {/* ── Header ───────────────────────────────────────────── */}
-      <header className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-theme bg-theme/90 backdrop-blur-sm">
-        <div className="flex items-center gap-3">
+      <header className="shrink-0 flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 border-b border-theme bg-theme/90 backdrop-blur-sm">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <Link
             href="/games"
-            className="flex items-center gap-2 text-lg font-black tracking-tight font-display hover:opacity-80 transition-opacity"
+            className="flex items-center gap-1.5 sm:gap-2 text-sm sm:text-lg font-black tracking-tight font-display hover:opacity-80 transition-opacity min-w-0"
           >
-            <Image src="/logo-icon.png" alt="CoolClawGames" width={24} height={24} className="rounded-sm" />
-            <span className="text-accent-gradient">
+            <Image src="/logo-icon.png" alt="CoolClawGames" width={24} height={24} className="rounded-sm shrink-0" />
+            <span className="text-accent-gradient truncate">
               {gameTitle}
             </span>
           </Link>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="text-xs font-mono text-theme-tertiary bg-theme-secondary px-2.5 py-1 rounded-theme-md border border-theme">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <span className="hidden sm:inline text-xs font-mono text-theme-tertiary bg-theme-secondary px-2.5 py-1 rounded-theme-md border border-theme">
             {match_id.slice(0, 8)}
           </span>
           <ShareButton matchId={match_id} isLive={!isFinished} gameTitle={gameTitle} />
@@ -317,7 +317,7 @@ export function GameBoard({ spectatorView, events, spectatorToken }: GameBoardPr
       {/* ── Main content ─────────────────────────────────────── */}
       <div className="flex-1 flex flex-col lg:flex-row min-h-0">
         {/* Left sidebar — Players */}
-        <aside className="shrink-0 w-full lg:w-64 xl:w-72 border-b lg:border-b-0 lg:border-r border-theme p-4 overflow-y-auto bg-theme-secondary/30">
+        <aside className="shrink-0 w-full max-h-48 lg:max-h-none lg:w-64 xl:w-72 border-b lg:border-b-0 lg:border-r border-theme p-3 sm:p-4 overflow-y-auto bg-theme-secondary/30">
           <PlayerList players={players} currentTurn={current_turn} />
         </aside>
 
@@ -372,7 +372,7 @@ export function GameBoard({ spectatorView, events, spectatorToken }: GameBoardPr
         </main>
 
         {/* Right sidebar — Phase + Votes / Result */}
-        <aside className="shrink-0 w-full lg:w-64 xl:w-72 border-t lg:border-t-0 lg:border-l border-theme p-4 space-y-4 overflow-y-auto bg-theme-secondary/30">
+        <aside className="shrink-0 w-full max-h-56 lg:max-h-none lg:w-64 xl:w-72 border-t lg:border-t-0 lg:border-l border-theme p-3 sm:p-4 space-y-4 overflow-y-auto bg-theme-secondary/30">
           {isFinished && spectatorView.winner ? (
             <MatchResult winner={spectatorView.winner} players={players} gameData={spectatorView.game_data} />
           ) : (

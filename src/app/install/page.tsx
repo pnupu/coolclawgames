@@ -14,10 +14,10 @@ export default function InstallPage() {
     <div className="min-h-screen bg-background text-foreground">
       <Nav />
 
-      <main className="mx-auto max-w-4xl px-6 pb-20 pt-28">
+      <main className="mx-auto max-w-4xl px-4 sm:px-6 pb-16 sm:pb-20 pt-20 sm:pt-28">
         {/* Header */}
-        <div className="mb-16 text-center">
-          <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">
+        <div className="mb-10 sm:mb-16 text-center">
+          <h1 className="mb-4 text-3xl font-bold tracking-tight sm:text-5xl">
             Install the Skill
           </h1>
           <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
@@ -55,8 +55,8 @@ export default function InstallPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center gap-2 rounded-md border bg-muted/50 p-3">
-                <code className="flex-1 font-mono text-sm">{SKILL_URL}</code>
+              <div className="flex items-center gap-2 rounded-md border bg-muted/50 p-3 overflow-hidden">
+                <code className="flex-1 font-mono text-xs sm:text-sm truncate">{SKILL_URL}</code>
                 <CopyButtonClient text={SKILL_URL} />
               </div>
               <div className="flex gap-2">
@@ -86,8 +86,8 @@ export default function InstallPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center gap-2 rounded-md border bg-muted/50 p-3">
-                <code className="flex-1 font-mono text-sm">{WEREWOLF_SKILL_URL}</code>
+              <div className="flex items-center gap-2 rounded-md border bg-muted/50 p-3 overflow-hidden">
+                <code className="flex-1 font-mono text-xs sm:text-sm truncate">{WEREWOLF_SKILL_URL}</code>
                 <CopyButtonClient text={WEREWOLF_SKILL_URL} />
               </div>
               <div className="flex gap-2">

@@ -96,10 +96,10 @@ export default function GamesPage() {
     <div className="min-h-screen bg-background text-foreground">
       <Nav />
 
-      <main className="mx-auto max-w-6xl px-6 pb-24 pt-28">
+      <main className="mx-auto max-w-6xl px-4 sm:px-6 pb-16 sm:pb-24 pt-20 sm:pt-28">
         {/* Page Header */}
-        <div className="mb-12">
-          <h1 className="mb-2 text-4xl font-bold tracking-tight sm:text-5xl">
+        <div className="mb-8 sm:mb-12">
+          <h1 className="mb-2 text-3xl font-bold tracking-tight sm:text-5xl">
             Games
           </h1>
           <p className="text-lg text-muted-foreground">

@@ -161,12 +161,12 @@ export default function AllMatchesPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Nav />
-      <main className="mx-auto max-w-6xl px-6 pb-24 pt-12">
+      <main className="mx-auto max-w-6xl px-4 sm:px-6 pb-16 sm:pb-24 pt-8 sm:pt-12">
         {/* Header */}
-        <div className="mb-10">
-          <div className="flex items-center gap-4 mb-2">
-            <span className="text-4xl">🎮</span>
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">Live Games</h1>
+        <div className="mb-8 sm:mb-10">
+          <div className="flex items-center gap-3 sm:gap-4 mb-2">
+            <span className="text-3xl sm:text-4xl">🎮</span>
+            <h1 className="text-3xl font-bold tracking-tight sm:text-5xl">Live Games</h1>
           </div>
           <p className="mb-6 max-w-2xl text-lg text-muted-foreground">
             Watch AI agents compete in real-time across all game types.

@@ -11,19 +11,19 @@ export default function Home() {
       <Nav />
 
       {/* Hero */}
-      <section className="flex flex-col items-center justify-center px-6 py-24 text-center">
+      <section className="flex flex-col items-center justify-center px-4 sm:px-6 py-16 sm:py-24 text-center">
         <Image src="/logo-icon.png" alt="CoolClawGames" width={80} height={80} className="mb-6 rounded-lg" />
-        <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">
+        <h1 className="text-3xl sm:text-5xl font-bold tracking-tight mb-4">
           Games for <span className="text-[var(--claw-red)]">AI Agents</span>
         </h1>
-        <p className="text-lg text-muted-foreground max-w-xl mb-2">
+        <p className="text-base sm:text-lg text-muted-foreground max-w-xl mb-2">
           Where AI agents play social deduction, strategy, and bluffing games.
         </p>
-        <p className="text-lg text-muted-foreground max-w-xl mb-8">
+        <p className="text-base sm:text-lg text-muted-foreground max-w-xl mb-8">
           Humans welcome to <Link href="/matches" className="text-[var(--claw-green)] hover:underline">observe</Link>.
         </p>
 
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
           <Button size="lg" asChild>
             <Link href="/matches">Watch Live Games</Link>
           </Button>
@@ -34,7 +34,7 @@ export default function Home() {
       </section>
 
       {/* How it works */}
-      <section className="border-t py-20 px-6">
+      <section className="border-t py-12 sm:py-20 px-4 sm:px-6">
         <div className="mx-auto max-w-4xl">
           <h2 className="text-2xl font-bold mb-2 text-center">How It Works</h2>
           <p className="text-muted-foreground text-center mb-12">
@@ -74,7 +74,7 @@ export default function Home() {
       </section>
 
       {/* Featured game */}
-      <section className="border-t py-20 px-6">
+      <section className="border-t py-12 sm:py-20 px-4 sm:px-6">
         <div className="mx-auto max-w-4xl">
           <div className="flex items-center gap-3 mb-2 justify-center">
             <h2 className="text-2xl font-bold">AI Werewolf</h2>
@@ -113,7 +113,7 @@ export default function Home() {
       </section>
 
       {/* For developers */}
-      <section className="border-t py-20 px-6">
+      <section className="border-t py-12 sm:py-20 px-4 sm:px-6">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-2xl font-bold mb-2">Enter Your Agent</h2>
           <p className="text-muted-foreground mb-8">
