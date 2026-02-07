@@ -14,47 +14,46 @@ import {
   isPhaseDeadlineManagedGame,
 } from "@/engine/dispatcher";
 
-// Track when each player's current turn started
-// Key: `${matchId}:${playerId}`, Value: timestamp
-const turnStartTimes = new Map<string, number>();
-
 // Track matches we've already finished processing (avoid double-processing)
 const processingMatches = new Set<string>();
 
 /**
- * Record that a player's turn has started.
- * Called when game state changes and a new player gets their turn.
+ * Grace period for the first turn of a brand-new match.
+ * Agents need time to discover the match started (poll lobby → see match_id → poll state → submit).
+ * Without this, the first player can get timed out while still trying to connect.
  */
-function recordTurnStart(matchId: string, playerId: string): void {
-  const key = `${matchId}:${playerId}`;
-  if (!turnStartTimes.has(key)) {
-    turnStartTimes.set(key, Date.now());
-  }
-}
+const FIRST_TURN_GRACE_MS = 15_000; // 15 seconds extra for the very first round
 
 /**
- * Clear turn tracking for a player (they acted or game ended).
+ * Grace period after a Vercel cold start / redeployment.
+ * When the server restarts, matches are reloaded from DB but agents don't know
+ * they need to re-poll. Give them extra time to recover.
  */
-function clearTurn(matchId: string, playerId: string): void {
-  turnStartTimes.delete(`${matchId}:${playerId}`);
-}
+const COLD_START_GRACE_MS = 30_000; // 30 seconds after server startup before enforcing timeouts
+const serverStartedAt = Date.now();
 
 /**
  * Clear all turn tracking for a match (game ended).
  */
 function clearMatch(matchId: string): void {
-  for (const key of turnStartTimes.keys()) {
-    if (key.startsWith(`${matchId}:`)) {
-      turnStartTimes.delete(key);
-    }
-  }
+  // No-op now (turnStartTimes removed), but keep for future use
+  void matchId;
 }
 
 /**
  * Check all active matches for players who have exceeded the turn timeout.
+ * Uses the authoritative `turnStartedAt` field from the game state (persisted in DB)
+ * instead of a separate in-memory map -- this is resilient to cold starts.
  */
 function checkForTimeouts(): void {
   const now = Date.now();
+
+  // Don't enforce timeouts during the cold start grace period
+  // This prevents mass-timeouts when the server restarts and matches are reloaded
+  if (now - serverStartedAt < COLD_START_GRACE_MS) {
+    return;
+  }
+
   const matches = getAllMatches();
 
   for (const state of matches) {
@@ -115,18 +114,25 @@ function checkForTimeouts(): void {
         continue;
       }
 
-      const key = `${state.matchId}:${player.agentId}`;
-
       if (view.your_turn) {
-        // Record turn start if not already tracked
-        recordTurnStart(state.matchId, player.agentId);
+        // Use the authoritative turnStartedAt from the game state (persisted in DB).
+        // This is much more reliable than an in-memory map that gets wiped on cold starts.
+        const turnStart = state.turnStartedAt;
+        const elapsed = now - turnStart;
 
-        const turnStart = turnStartTimes.get(key);
-        if (turnStart && now - turnStart > view.turn_timeout_ms) {
+        // Add grace period for the first round of a new match.
+        // Agents need extra time to discover the match started (poll lobby, poll state, build action).
+        const isFirstRound = state.round <= 1;
+        const effectiveTimeout = isFirstRound
+          ? view.turn_timeout_ms + FIRST_TURN_GRACE_MS
+          : view.turn_timeout_ms;
+
+        if (elapsed > effectiveTimeout) {
           // Player has exceeded timeout -- auto-action
           processingMatches.add(state.matchId);
           console.log(
-            `[turn-timeout] Player ${player.agentName} timed out in match ${state.matchId} (phase: ${state.phase})`
+            `[turn-timeout] Player ${player.agentName} timed out in match ${state.matchId} ` +
+            `(phase: ${state.phase}, elapsed: ${Math.round(elapsed / 1000)}s, timeout: ${Math.round(effectiveTimeout / 1000)}s)`
           );
 
           try {
@@ -159,18 +165,12 @@ function checkForTimeouts(): void {
                 }
               }
             }
-
-            // Clear the timed-out player's turn tracking
-            clearTurn(state.matchId, player.agentId);
           } catch (err) {
             console.error(`[turn-timeout] Error handling timeout:`, err);
           } finally {
             processingMatches.delete(state.matchId);
           }
         }
-      } else {
-        // Not their turn -- clear tracking
-        clearTurn(state.matchId, player.agentId);
       }
     }
   }
