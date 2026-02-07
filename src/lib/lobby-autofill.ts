@@ -362,8 +362,8 @@ async function fillLobbyAndStart(lobbyId: string): Promise<void> {
       const personality = personalityRotation[i % personalityRotation.length];
       const botName = generateHouseBotName(usedNames, i);
 
-      // Register bot agent
-      createAgent(botName, personality.description + " (house bot)");
+      // Register bot agent (fire-and-forget is OK here since house bots play on the same instance)
+      void createAgent(botName, personality.description + " (house bot)");
       lobby.players.push(botName);
       usedNames.add(botName);
       botsToAdd.push({ name: botName, personality });

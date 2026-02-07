@@ -157,7 +157,7 @@ ensureInitialized();
 
 // --- Agent operations ---
 
-export function createAgent(name: string, description: string): StoredAgent {
+export async function createAgent(name: string, description: string): Promise<StoredAgent> {
   const apiKey = `ccg_${crypto.randomUUID().replace(/-/g, "")}`;
   const agent: StoredAgent = {
     id: crypto.randomUUID(),
@@ -173,9 +173,11 @@ export function createAgent(name: string, description: string): StoredAgent {
   agentsByKey.set(apiKey, agent);
   agentsByName.set(name, agent);
 
-  // Persist to DB (fire-and-forget)
-  prisma.agent
-    .create({
+  // Await DB write so the key is available on other Vercel instances immediately.
+  // Without this, a request hitting a different instance could fail with "Invalid API key"
+  // because the fire-and-forget write hasn't completed yet.
+  try {
+    await prisma.agent.create({
       data: {
         id: agent.id,
         name: agent.name,
@@ -186,14 +188,47 @@ export function createAgent(name: string, description: string): StoredAgent {
         gamesWon: agent.gamesWon,
         lastLobbyCreated: new Date(agent.lastLobbyCreated || 0),
       },
-    })
-    .catch((err) => console.error("[store] Failed to persist agent:", err));
+    });
+  } catch (err) {
+    console.error("[store] Failed to persist agent:", err);
+  }
 
   return agent;
 }
 
 export function getAgentByKey(apiKey: string): StoredAgent | undefined {
   return agentsByKey.get(apiKey);
+}
+
+/**
+ * DB fallback for getAgentByKey -- used when agent not found in memory
+ * (e.g. request hitting a different Vercel instance than the one that registered the agent).
+ */
+export async function getAgentByKeyFromDb(apiKey: string): Promise<StoredAgent | undefined> {
+  const cached = agentsByKey.get(apiKey);
+  if (cached) return cached;
+
+  try {
+    const a = await prisma.agent.findFirst({ where: { apiKey } });
+    if (!a) return undefined;
+    const agent: StoredAgent = {
+      id: a.id,
+      name: a.name,
+      apiKey: a.apiKey,
+      description: a.description,
+      createdAt: a.createdAt.getTime(),
+      gamesPlayed: a.gamesPlayed,
+      gamesWon: a.gamesWon,
+      lastLobbyCreated: a.lastLobbyCreated.getTime(),
+      requestTimestamps: [],
+    };
+    agentsByKey.set(agent.apiKey, agent);
+    agentsByName.set(agent.name, agent);
+    return agent;
+  } catch (err) {
+    console.error("[store] Failed to fetch agent from DB:", err);
+    return undefined;
+  }
 }
 
 export function getAgentByName(name: string): StoredAgent | undefined {
@@ -410,6 +445,26 @@ export function createMatch(state: GameState): void {
 
 export function getMatch(id: MatchId): GameState | undefined {
   return matches.get(id);
+}
+
+/**
+ * DB fallback for getMatch -- used when match not found in memory
+ * (e.g. request hitting a different Vercel instance than the one running the game).
+ */
+export async function getMatchFromDb(id: MatchId): Promise<GameState | undefined> {
+  const cached = matches.get(id);
+  if (cached) return cached;
+
+  try {
+    const m = await prisma.match.findUnique({ where: { id } });
+    if (!m) return undefined;
+    const state = deserializeState(m.state as Record<string, unknown>);
+    matches.set(state.matchId, state);
+    return state;
+  } catch (err) {
+    console.error("[store] Failed to fetch match from DB:", err);
+    return undefined;
+  }
 }
 
 export function getAllMatches(): GameState[] {

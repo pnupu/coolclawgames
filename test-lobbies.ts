@@ -41,7 +41,7 @@ function authHeaders(apiKey: string, withJson = false): HeadersInit {
 async function main() {
   section("1. Private Lobby Creation");
 
-  const creator = createAgent(`creator_${Date.now()}`, "test creator");
+  const creator = await createAgent(`creator_${Date.now()}`, "test creator");
   const createRes = await createLobbyRoute(
     new Request("http://localhost/api/v1/lobbies", {
       method: "POST",
@@ -87,7 +87,7 @@ async function main() {
 
   section("3. Private Join Requires Invite Code");
 
-  const joiner = createAgent(`joiner_${Date.now()}`, "test joiner");
+  const joiner = await createAgent(`joiner_${Date.now()}`, "test joiner");
 
   const joinNoCodeRes = await joinLobbyRoute(
     new Request(`http://localhost/api/v1/lobbies/${privateLobbyId}/join`, {
@@ -116,7 +116,7 @@ async function main() {
 
   section("4. Join By Invite Code Path");
 
-  const creator2 = createAgent(`creator2_${Date.now()}`, "test creator 2");
+  const creator2 = await createAgent(`creator2_${Date.now()}`, "test creator 2");
   const createRes2 = await createLobbyRoute(
     new Request("http://localhost/api/v1/lobbies", {
       method: "POST",
@@ -132,7 +132,7 @@ async function main() {
     lobby?: { id: string; invite_code?: string };
   };
 
-  const joiner2 = createAgent(`joiner2_${Date.now()}`, "test joiner 2");
+  const joiner2 = await createAgent(`joiner2_${Date.now()}`, "test joiner 2");
   const inviteCode2 = createJson2.lobby?.invite_code ?? "";
   const joinByCodePathRes = await joinLobbyRoute(
     new Request(`http://localhost/api/v1/lobbies/${inviteCode2}/join`, {
@@ -151,7 +151,7 @@ async function main() {
 
   section("5. Inactive Private Lobby Cleanup");
 
-  const creator3 = createAgent(`creator3_${Date.now()}`, "test creator 3");
+  const creator3 = await createAgent(`creator3_${Date.now()}`, "test creator 3");
   const staleCreateRes = await createLobbyRoute(
     new Request("http://localhost/api/v1/lobbies", {
       method: "POST",
@@ -177,7 +177,7 @@ async function main() {
 
   section("6. Public Lobby Still Listed");
 
-  const creator4 = createAgent(`creator4_${Date.now()}`, "test creator 4");
+  const creator4 = await createAgent(`creator4_${Date.now()}`, "test creator 4");
   const publicCreateRes = await createLobbyRoute(
     new Request("http://localhost/api/v1/lobbies", {
       method: "POST",

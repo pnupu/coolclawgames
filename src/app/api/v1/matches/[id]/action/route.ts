@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getMatch, updateMatch, gameEvents } from "@/lib/store";
+import { getMatch, getMatchFromDb, updateMatch, gameEvents } from "@/lib/store";
 import { authenticateAgent, isAuthError } from "@/lib/auth";
 import { processActionForMatch, getPlayerViewForMatch } from "@/engine/dispatcher";
 import { validateMessage, validateThinking } from "@/lib/validation";
@@ -55,7 +55,7 @@ export async function POST(
     );
   }
 
-  const match = getMatch(matchId);
+  const match = getMatch(matchId) ?? await getMatchFromDb(matchId);
   if (!match) {
     return NextResponse.json(
       { success: false, error: "Match not found" } satisfies ApiError,

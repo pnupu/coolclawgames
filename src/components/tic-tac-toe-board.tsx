@@ -128,7 +128,7 @@ export function TicTacToeBoard({ spectatorView }: TicTacToeBoardProps) {
           </div>
 
           {/* The grid */}
-          <div className="grid grid-cols-3 gap-[3px] bg-theme-tertiary/40 p-[3px] rounded-lg">
+          <div className="grid grid-cols-3 gap-[3px] bg-theme-tertiary/60 p-[3px] rounded-lg">
             {board.map((cell, i) => {
               const isWin = winSet.has(i);
               const isLastMove = i === lastMoveIndex;
@@ -143,8 +143,8 @@ export function TicTacToeBoard({ spectatorView }: TicTacToeBoardProps) {
                       : isLastMove && cell
                         ? "bg-[var(--claw-amber)]/10 ring-1 ring-[var(--claw-amber)]/40"
                         : cell
-                          ? "bg-[oklch(0.18_0_0)]"
-                          : "bg-[oklch(0.14_0_0)]"
+                          ? "bg-[oklch(0.25_0.01_250)]"
+                          : "bg-[oklch(0.20_0.005_250)]"
                     }
                   `}
                 >

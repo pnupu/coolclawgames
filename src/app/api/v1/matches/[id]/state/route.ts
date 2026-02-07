@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
-import { getMatch, gameEvents } from "@/lib/store";
+import { getMatch, getMatchFromDb, gameEvents } from "@/lib/store";
 import { authenticateAgent, isAuthError } from "@/lib/auth";
 import { getPlayerViewForMatch } from "@/engine/dispatcher";
 import type { MatchStateResponse, ApiError } from "@/types/api";
+
+/** How often to check match state from DB during long poll (ms) */
+const LONG_POLL_CHECK_INTERVAL_MS = 3_000;
+/** Max time to wait during long poll (ms) */
+const LONG_POLL_MAX_WAIT_MS = 25_000;
 
 export async function GET(
   request: Request,
@@ -24,7 +29,7 @@ export async function GET(
 
   const { agent } = authResult;
 
-  const match = getMatch(id);
+  const match = getMatch(id) ?? await getMatchFromDb(id);
   if (!match) {
     return NextResponse.json(
       { success: false, error: "Match not found" } satisfies ApiError,
@@ -49,27 +54,52 @@ export async function GET(
   const wait = url.searchParams.get("wait") === "true";
 
   if (wait) {
-    // If it's not the player's turn, wait for a turn notification or timeout
+    // If it's not the player's turn, wait for a turn notification.
+    // In a multi-instance serverless setup, the in-memory EventEmitter event
+    // may never arrive (match on instance A, poll on instance B).
+    // So we also periodically check the DB for state changes.
     const view = getPlayerViewForMatch(match, agent.id);
     if (!view.your_turn && match.status === "in_progress") {
       await new Promise<void>((resolve) => {
-        const timeout = setTimeout(() => {
+        let resolved = false;
+        const done = () => {
+          if (resolved) return;
+          resolved = true;
+          clearTimeout(maxTimeout);
+          clearInterval(dbCheckInterval);
           gameEvents.removeListener(`turn:${agent.id}`, onTurn);
           resolve();
-        }, 30_000);
+        };
 
-        function onTurn() {
-          clearTimeout(timeout);
-          resolve();
-        }
+        // Max wait
+        const maxTimeout = setTimeout(done, LONG_POLL_MAX_WAIT_MS);
 
+        // In-memory event (works when same instance handles both match and poll)
+        function onTurn() { done(); }
         gameEvents.once(`turn:${agent.id}`, onTurn);
+
+        // Periodic DB check (handles cross-instance case)
+        const dbCheckInterval = setInterval(async () => {
+          try {
+            const freshMatch = await getMatchFromDb(id);
+            if (!freshMatch || freshMatch.status !== "in_progress") {
+              done();
+              return;
+            }
+            const freshView = getPlayerViewForMatch(freshMatch, agent.id);
+            if (freshView.your_turn) {
+              done();
+            }
+          } catch {
+            // Ignore errors during periodic check
+          }
+        }, LONG_POLL_CHECK_INTERVAL_MS);
       });
     }
   }
 
-  // Return fresh state after potential wait
-  const freshMatch = getMatch(id);
+  // Return fresh state after potential wait (check DB too in case state changed on another instance)
+  const freshMatch = getMatch(id) ?? await getMatchFromDb(id);
   if (!freshMatch) {
     return NextResponse.json(
       { success: false, error: "Match not found" } satisfies ApiError,

@@ -1,4 +1,4 @@
-import { getMatch, gameEvents, ensureInitialized } from "@/lib/store";
+import { getMatch, getMatchFromDb, gameEvents, ensureInitialized } from "@/lib/store";
 import { getSpectatorViewForMatch } from "@/engine/dispatcher";
 import { validateSpectatorToken } from "@/lib/spectator-token";
 import { acquireActiveSlot, checkRequestRateLimit, getClientIp } from "@/lib/rate-limit";
@@ -39,7 +39,7 @@ export async function GET(
     );
   }
 
-  const match = getMatch(matchId);
+  const match = getMatch(matchId) ?? await getMatchFromDb(matchId);
   if (!match) {
     slot.release();
     return new Response(

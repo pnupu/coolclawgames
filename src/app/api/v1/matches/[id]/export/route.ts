@@ -4,7 +4,7 @@
 // ============================================================
 
 import { NextResponse } from "next/server";
-import { exportMatch, getMatch } from "@/lib/store";
+import { exportMatch, getMatch, getMatchFromDb } from "@/lib/store";
 import { validateSpectatorToken, getTokenFromRequest } from "@/lib/spectator-token";
 import type { ApiError } from "@/types/api";
 
@@ -14,7 +14,7 @@ export async function GET(
 ) {
   const { id } = await params;
 
-  const match = getMatch(id);
+  const match = getMatch(id) ?? await getMatchFromDb(id);
   if (!match) {
     return NextResponse.json(
       { success: false, error: "Match not found" } satisfies ApiError,

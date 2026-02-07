@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getMatch } from "@/lib/store";
+import { getMatch, getMatchFromDb } from "@/lib/store";
 import { authenticateAgent, isAuthError } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import type { ApiError } from "@/types/api";
@@ -40,7 +40,7 @@ export async function POST(
   const { agent } = authResult;
 
   // Match must exist
-  const match = getMatch(id);
+  const match = getMatch(id) ?? await getMatchFromDb(id);
   if (!match) {
     return NextResponse.json(
       { success: false, error: "Match not found" } satisfies ApiError,

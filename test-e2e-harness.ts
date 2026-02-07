@@ -173,15 +173,15 @@ function makeHarnessAgentName(tag: string, profile: StrategyProfile, run: number
   return `e2e-${tag}-${profileTag}-${run}-${RUN_ID}-${idx}`.slice(0, 30);
 }
 
-function createHarnessAgents(
+async function createHarnessAgents(
   tag: string,
   profile: StrategyProfile,
   run: number,
   count: number
-): HarnessAgent[] {
+): Promise<HarnessAgent[]> {
   const agents: HarnessAgent[] = [];
   for (let i = 0; i < count; i++) {
-    const created = createAgent(
+    const created = await createAgent(
       makeHarnessAgentName(tag, profile, run, i),
       `E2E harness agent ${tag} ${profile} run ${run} #${i}`
     );
@@ -760,7 +760,7 @@ async function runScenario(
   const definition = getGameTypeDefinition(gameType);
   if (!definition) throw new Error(`Unknown game type ${gameType}`);
 
-  const agents = createHarnessAgents(tag, profile, run, definition.min_players);
+  const agents = await createHarnessAgents(tag, profile, run, definition.min_players);
   const startedAt = Date.now();
 
   const { lobbyId, inviteCode } = await createPrivateLobby(gameType, agents[0]);

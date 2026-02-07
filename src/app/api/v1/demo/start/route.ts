@@ -139,13 +139,15 @@ export async function POST(request: Request) {
   const personalities = HOUSE_BOT_PERSONALITIES.slice(0, numPlayers);
 
   // Register bot agents
-  const botAgents = personalities.map((p) => {
-    const agent = createAgent(
-      p.name + "_" + Date.now().toString(36),
-      p.description
-    );
-    return { agent, personality: p };
-  });
+  const botAgents = await Promise.all(
+    personalities.map(async (p) => {
+      const agent = await createAgent(
+        p.name + "_" + Date.now().toString(36),
+        p.description
+      );
+      return { agent, personality: p };
+    })
+  );
 
   // Create match
   const matchId = crypto.randomUUID();

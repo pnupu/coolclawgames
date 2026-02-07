@@ -50,8 +50,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create agent
-    const agent = createAgent(name, description ?? "");
+    // Create agent (awaits DB write so key is immediately usable on other instances)
+    const agent = await createAgent(name, description ?? "");
 
     const response: RegisterResponse = {
       success: true,

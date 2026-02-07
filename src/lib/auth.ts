@@ -2,7 +2,7 @@
 // Auth helpers -- bearer token extraction + validation
 // ============================================================
 
-import { getAgentByKey, checkRateLimit, ensureInitialized, type StoredAgent } from "./store";
+import { getAgentByKey, getAgentByKeyFromDb, checkRateLimit, ensureInitialized, type StoredAgent } from "./store";
 
 export interface AuthResult {
   agent: StoredAgent;
@@ -44,7 +44,8 @@ export async function authenticateAgent(
   }
 
   const apiKey = parts[1];
-  const agent = getAgentByKey(apiKey);
+  // Try in-memory first, then fall back to DB (handles cross-instance lookups)
+  const agent = getAgentByKey(apiKey) ?? await getAgentByKeyFromDb(apiKey);
 
   if (!agent) {
     return {
