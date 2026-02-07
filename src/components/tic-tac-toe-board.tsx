@@ -7,39 +7,39 @@ interface TicTacToeBoardProps {
   spectatorView: SpectatorView;
 }
 
-const CELL_LABELS = ["A1", "A2", "A3", "B1", "B2", "B3", "C1", "C2", "C3"];
+const ROW_LABELS = ["A", "B", "C"];
+const COL_LABELS = ["1", "2", "3"];
 
-function XMark({ isWinning }: { isWinning: boolean }) {
+function XMark({ isWinning, size = "normal" }: { isWinning: boolean; size?: "small" | "normal" }) {
+  const sw = size === "small" ? 12 : 10;
   return (
     <svg viewBox="0 0 100 100" className={`w-full h-full ${isWinning ? "animate-pulse" : ""}`}>
       <line
-        x1="20" y1="20" x2="80" y2="80"
+        x1="22" y1="22" x2="78" y2="78"
         stroke={isWinning ? "var(--claw-red)" : "var(--claw-blue)"}
-        strokeWidth="10"
+        strokeWidth={sw}
         strokeLinecap="round"
-        className="drop-shadow-sm"
       />
       <line
-        x1="80" y1="20" x2="20" y2="80"
+        x1="78" y1="22" x2="22" y2="78"
         stroke={isWinning ? "var(--claw-red)" : "var(--claw-blue)"}
-        strokeWidth="10"
+        strokeWidth={sw}
         strokeLinecap="round"
-        className="drop-shadow-sm"
       />
     </svg>
   );
 }
 
-function OMark({ isWinning }: { isWinning: boolean }) {
+function OMark({ isWinning, size = "normal" }: { isWinning: boolean; size?: "small" | "normal" }) {
+  const sw = size === "small" ? 12 : 10;
   return (
     <svg viewBox="0 0 100 100" className={`w-full h-full ${isWinning ? "animate-pulse" : ""}`}>
       <circle
-        cx="50" cy="50" r="30"
+        cx="50" cy="50" r="28"
         fill="none"
         stroke={isWinning ? "var(--claw-red)" : "var(--claw-purple)"}
-        strokeWidth="10"
+        strokeWidth={sw}
         strokeLinecap="round"
-        className="drop-shadow-sm"
       />
     </svg>
   );
@@ -58,70 +58,118 @@ export function TicTacToeBoard({ spectatorView }: TicTacToeBoardProps) {
 
   const winSet = useMemo(() => new Set(winLine ?? []), [winLine]);
 
-  // Find current turn player name
+  // Find player names by mark
+  const xPlayer = Object.entries(marksByPlayer).find(([, m]) => m === "X")?.[0];
+  const oPlayer = Object.entries(marksByPlayer).find(([, m]) => m === "O")?.[0];
+
+  // Find current turn player
   const currentTurnPlayer = spectatorView.players.find(
     (p) => p.agent_id === spectatorView.current_turn
   );
-
-  // Find which mark belongs to the current player
   const currentMark = currentTurnPlayer ? marksByPlayer[currentTurnPlayer.agent_name] : null;
 
   const isFinished = spectatorView.status === "finished";
 
+  // Find the last placed move (most recent player_ability event)
+  const lastMoveIndex = useMemo(() => {
+    const abilities = spectatorView.events.filter((e) => e.type === "player_ability");
+    if (abilities.length === 0) return -1;
+    const last = abilities[abilities.length - 1];
+    const match = last.message.match(/on ([A-C][1-3])/);
+    if (!match) return -1;
+    const cell = match[1];
+    const row = cell.charCodeAt(0) - 65; // A=0, B=1, C=2
+    const col = parseInt(cell[1]) - 1;
+    return row * 3 + col;
+  }, [spectatorView.events]);
+
   return (
-    <div className="flex flex-col items-center gap-4 py-4">
+    <div className="flex flex-col items-center gap-3 py-4 px-2">
       {/* Series score header */}
       {bestOf > 1 && (
-        <div className="flex items-center gap-4 text-sm">
+        <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
-            <span className="text-[var(--claw-blue)] font-bold font-display text-lg">X</span>
-            <span className="font-mono text-lg font-bold">{seriesScore.X ?? 0}</span>
+            <div className="w-6 h-6"><XMark isWinning={false} size="small" /></div>
+            <span className="text-theme-secondary text-xs truncate max-w-[80px]">{xPlayer}</span>
+            <span className="font-mono text-2xl font-black text-theme-primary">{seriesScore.X ?? 0}</span>
           </div>
-          <span className="text-theme-tertiary text-xs">
-            Game {gamesPlayed + (isFinished ? 0 : 1)} of {bestOf}
-          </span>
+          <div className="flex flex-col items-center">
+            <span className="text-theme-tertiary text-[10px] uppercase tracking-wider font-semibold">
+              Game {gamesPlayed + (isFinished ? 0 : 1)} of {bestOf}
+            </span>
+          </div>
           <div className="flex items-center gap-2">
-            <span className="font-mono text-lg font-bold">{seriesScore.O ?? 0}</span>
-            <span className="text-[var(--claw-purple)] font-bold font-display text-lg">O</span>
+            <span className="font-mono text-2xl font-black text-theme-primary">{seriesScore.O ?? 0}</span>
+            <span className="text-theme-secondary text-xs truncate max-w-[80px]">{oPlayer}</span>
+            <div className="w-6 h-6"><OMark isWinning={false} size="small" /></div>
           </div>
         </div>
       )}
 
-      {/* Board */}
-      <div className="relative">
-        <div className="grid grid-cols-3 gap-1.5 bg-theme-tertiary/30 p-1.5 rounded-theme-lg">
-          {board.map((cell, i) => {
-            const isWin = winSet.has(i);
-            return (
-              <div
-                key={i}
-                className={`
-                  w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center rounded-theme-md
-                  transition-all duration-300
-                  ${isWin
-                    ? "bg-[var(--claw-red)]/15 border-2 border-[var(--claw-red)]/40 shadow-lg"
-                    : cell
-                      ? "bg-theme-secondary border border-theme"
-                      : "bg-theme border border-theme/50"
-                  }
-                `}
-                title={CELL_LABELS[i]}
-              >
-                <div className="w-12 h-12 sm:w-16 sm:h-16">
-                  {cell === "X" && <XMark isWinning={isWin} />}
-                  {cell === "O" && <OMark isWinning={isWin} />}
-                </div>
+      {/* Board with row/col labels */}
+      <div className="flex items-start gap-0">
+        {/* Row labels */}
+        <div className="flex flex-col mt-8 mr-2">
+          {ROW_LABELS.map((label) => (
+            <div key={label} className="h-[72px] sm:h-[88px] flex items-center justify-center">
+              <span className="text-xs font-mono font-bold text-theme-tertiary">{label}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex flex-col items-center">
+          {/* Column labels */}
+          <div className="flex mb-1">
+            {COL_LABELS.map((label) => (
+              <div key={label} className="w-[72px] sm:w-[88px] flex items-center justify-center">
+                <span className="text-xs font-mono font-bold text-theme-tertiary">{label}</span>
               </div>
-            );
-          })}
+            ))}
+          </div>
+
+          {/* The grid */}
+          <div className="grid grid-cols-3 gap-[3px] bg-theme-tertiary/40 p-[3px] rounded-lg">
+            {board.map((cell, i) => {
+              const isWin = winSet.has(i);
+              const isLastMove = i === lastMoveIndex;
+              return (
+                <div
+                  key={i}
+                  className={`
+                    w-[68px] h-[68px] sm:w-[84px] sm:h-[84px] flex items-center justify-center rounded-md
+                    transition-all duration-300 relative
+                    ${isWin
+                      ? "bg-[var(--claw-red)]/20 ring-2 ring-[var(--claw-red)]/60 shadow-lg"
+                      : isLastMove && cell
+                        ? "bg-[var(--claw-amber)]/10 ring-1 ring-[var(--claw-amber)]/40"
+                        : cell
+                          ? "bg-[oklch(0.18_0_0)]"
+                          : "bg-[oklch(0.14_0_0)]"
+                    }
+                  `}
+                >
+                  <div className="w-11 h-11 sm:w-14 sm:h-14">
+                    {cell === "X" && <XMark isWinning={isWin} />}
+                    {cell === "O" && <OMark isWinning={isWin} />}
+                  </div>
+                  {/* Empty cell dot */}
+                  {!cell && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-1.5 h-1.5 rounded-full bg-theme-tertiary/30" />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
       {/* Turn indicator */}
       {!isFinished && currentTurnPlayer && (
-        <div className="flex items-center gap-2 text-sm text-theme-secondary">
+        <div className="flex items-center gap-2 text-sm text-theme-secondary mt-1">
           <div className="w-5 h-5">
-            {currentMark === "X" ? <XMark isWinning={false} /> : <OMark isWinning={false} />}
+            {currentMark === "X" ? <XMark isWinning={false} size="small" /> : <OMark isWinning={false} size="small" />}
           </div>
           <span>
             <span className="font-semibold text-theme-primary">{currentTurnPlayer.agent_name}</span>
@@ -136,8 +184,8 @@ export function TicTacToeBoard({ spectatorView }: TicTacToeBoardProps) {
 
       {/* Winner banner */}
       {isFinished && spectatorView.winner && (
-        <div className="bg-[var(--warning)]/20 border border-[var(--warning)]/40 rounded-theme-lg px-5 py-2 text-center">
-          <span className="text-warning font-bold font-display">
+        <div className="bg-[var(--warning)]/20 border border-[var(--warning)]/40 rounded-lg px-5 py-2.5 text-center mt-1">
+          <span className="text-warning font-bold font-display text-sm">
             {spectatorView.winner.reason}
           </span>
         </div>
