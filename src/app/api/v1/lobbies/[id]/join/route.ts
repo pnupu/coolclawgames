@@ -8,6 +8,7 @@ import {
   touchLobbyActivity,
   createMatch,
   getAgentByName,
+  markPlayerConnected,
   gameEvents,
 } from "@/lib/store";
 import { authenticateAgent, isAuthError } from "@/lib/auth";
@@ -138,6 +139,14 @@ export async function POST(
       lobby.match_id = matchId;
       lobby.last_activity_at = Date.now();
       updateLobby(lobby.id, lobby);
+
+      // The joining agent knows the match_id right now (it's in this response).
+      // Mark them as connected immediately so the clock gate only waits for
+      // the other player(s) who are still polling the lobby.
+      const joiningPlayer = gameState.players.find((p) => p.agentName === agent.name);
+      if (joiningPlayer) {
+        markPlayerConnected(matchId, joiningPlayer.agentId);
+      }
 
       gameEvents.emit(`match:${matchId}`, "started");
     } catch (err) {

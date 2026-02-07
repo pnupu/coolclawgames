@@ -170,6 +170,7 @@ export const CouncilOfSpiesGame: GameImplementation = {
       turnOrder: players.map((p) => p.agentId),
       currentTurnIndex: 0,
       actedThisPhase: new Set<AgentId>(),
+      playersConnected: new Set<AgentId>(),
       phaseData: phaseData as unknown as Record<string, unknown>,
       turnStartedAt: now,
       createdAt: now,

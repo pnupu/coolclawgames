@@ -57,6 +57,7 @@ function serializeState(state: GameState): Record<string, unknown> {
   return {
     ...state,
     actedThisPhase: Array.from(state.actedThisPhase),
+    playersConnected: Array.from(state.playersConnected ?? []),
   };
 }
 
@@ -64,6 +65,7 @@ function deserializeState(data: Record<string, unknown>): GameState {
   return {
     ...data,
     actedThisPhase: new Set(data.actedThisPhase as string[]),
+    playersConnected: new Set((data.playersConnected as string[]) ?? []),
   } as GameState;
 }
 
@@ -496,6 +498,42 @@ export function updateMatch(id: MatchId, state: GameState): void {
       },
     })
     .catch((err) => console.error("[store] Failed to update match:", err));
+}
+
+/**
+ * Mark a player as "connected" (they've polled the match state at least once).
+ * When ALL alive players are connected, reset `turnStartedAt` to now so the
+ * turn timer starts fresh — agents aren't penalised for lobby-polling lag.
+ * Returns true if this call completed the set (all players now connected).
+ */
+export function markPlayerConnected(matchId: MatchId, agentId: AgentId): boolean {
+  const state = matches.get(matchId);
+  if (!state || state.status !== "in_progress") return false;
+
+  // Initialise the set for matches created before this field existed
+  if (!state.playersConnected) {
+    state.playersConnected = new Set();
+  }
+
+  if (state.playersConnected.has(agentId)) return false; // already connected
+
+  state.playersConnected.add(agentId);
+
+  const alivePlayers = state.players.filter((p) => p.alive);
+  const allConnected = alivePlayers.every((p) => state.playersConnected.has(p.agentId));
+
+  if (allConnected) {
+    // Everyone is here — start the clock NOW
+    state.turnStartedAt = Date.now();
+    console.log(
+      `[store] All players connected in match ${matchId} — turn clock reset to now`
+    );
+  }
+
+  // Persist the updated state (so other Vercel instances see it)
+  updateMatch(matchId, state);
+
+  return allConnected;
 }
 
 /** Get raw serialized match for export/download */

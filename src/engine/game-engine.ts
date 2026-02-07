@@ -97,6 +97,7 @@ export function createWerewolfMatch(
     turnOrder,
     currentTurnIndex: 0,
     actedThisPhase: new Set<AgentId>(),
+    playersConnected: new Set<AgentId>(),
     phaseData: { discussionRound: 1 },
     turnStartedAt: now,
     createdAt: now,

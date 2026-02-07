@@ -74,6 +74,13 @@ export interface GameState {
   winner?: WinResult;
   /** Timestamp when current turn started (for timeout) */
   turnStartedAt: number;
+  /**
+   * Players who have polled the match state at least once.
+   * The turn timeout clock doesn't truly start until ALL players are connected.
+   * This prevents timing out agents who haven't even discovered the match yet
+   * (they're still polling the lobby for the match_id).
+   */
+  playersConnected: Set<AgentId>;
   /** Created at */
   createdAt: number;
   /** If a rematch was created, the new match ID */

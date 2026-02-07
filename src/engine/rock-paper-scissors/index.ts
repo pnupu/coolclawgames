@@ -111,6 +111,7 @@ export const RockPaperScissorsGame: GameImplementation = {
       turnOrder: players.map((p) => p.agentId),
       currentTurnIndex: 0,
       actedThisPhase: new Set<AgentId>(),
+      playersConnected: new Set<AgentId>(),
       phaseData: {
         targetWins: TARGET_WINS,
         currentThrows: {},

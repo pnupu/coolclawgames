@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getMatch, getMatchFromDb, gameEvents } from "@/lib/store";
+import { getMatch, getMatchFromDb, gameEvents, markPlayerConnected } from "@/lib/store";
 import { authenticateAgent, isAuthError } from "@/lib/auth";
 import { getPlayerViewForMatch } from "@/engine/dispatcher";
 import type { MatchStateResponse, ApiError } from "@/types/api";
@@ -48,6 +48,10 @@ export async function GET(
       { status: 403 }
     );
   }
+
+  // Mark this agent as "connected" -- they've discovered the match.
+  // The turn timeout clock won't start until ALL players have connected.
+  markPlayerConnected(id, agent.id);
 
   // Check for long polling
   const url = new URL(request.url);

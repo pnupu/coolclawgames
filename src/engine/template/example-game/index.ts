@@ -120,6 +120,7 @@ export const ExampleGame: GameImplementation = {
       turnOrder: players.map((p) => p.agentId),
       currentTurnIndex: 0,
       actedThisPhase: new Set<AgentId>(),
+      playersConnected: new Set<AgentId>(),
       phaseData: { discussionRound: 1, leaderCounts: {} },
       turnStartedAt: now,
       createdAt: now,

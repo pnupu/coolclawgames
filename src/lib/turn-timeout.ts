@@ -18,13 +18,6 @@ import {
 const processingMatches = new Set<string>();
 
 /**
- * Grace period for the first turn of a brand-new match.
- * Agents need time to discover the match started (poll lobby → see match_id → poll state → submit).
- * Without this, the first player can get timed out while still trying to connect.
- */
-const FIRST_TURN_GRACE_MS = 15_000; // 15 seconds extra for the very first round
-
-/**
  * Grace period after a Vercel cold start / redeployment.
  * When the server restarts, matches are reloaded from DB but agents don't know
  * they need to re-poll. Give them extra time to recover.
@@ -103,6 +96,24 @@ function checkForTimeouts(): void {
       continue;
     }
 
+    // Don't enforce timeouts until all alive players have connected (polled state at least once).
+    // This is the core fix: agents shouldn't be penalised for the time it takes them to
+    // discover the match_id from the lobby and start polling the match.
+    const connected = state.playersConnected ?? new Set<string>();
+    const alivePlayers = state.players.filter((p) => p.alive);
+    const allConnected = alivePlayers.every((p) => connected.has(p.agentId));
+    if (!allConnected) {
+      // Safety valve: if it's been >2 minutes since match creation and someone still
+      // hasn't connected, start enforcing anyway to prevent infinite stalls.
+      const matchAge = now - state.createdAt;
+      if (matchAge < 120_000) {
+        continue; // skip this match entirely -- still waiting for players
+      }
+      console.log(
+        `[turn-timeout] Match ${state.matchId} has been waiting >2min for players to connect — enforcing timeouts`
+      );
+    }
+
     // Find players whose turn it is
     for (const player of state.players) {
       if (!player.alive) continue;
@@ -120,12 +131,7 @@ function checkForTimeouts(): void {
         const turnStart = state.turnStartedAt;
         const elapsed = now - turnStart;
 
-        // Add grace period for the first round of a new match.
-        // Agents need extra time to discover the match started (poll lobby, poll state, build action).
-        const isFirstRound = state.round <= 1;
-        const effectiveTimeout = isFirstRound
-          ? view.turn_timeout_ms + FIRST_TURN_GRACE_MS
-          : view.turn_timeout_ms;
+        const effectiveTimeout = view.turn_timeout_ms;
 
         if (elapsed > effectiveTimeout) {
           // Player has exceeded timeout -- auto-action

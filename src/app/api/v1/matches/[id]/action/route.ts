@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getMatch, getMatchFromDb, updateMatch, gameEvents } from "@/lib/store";
+import { getMatch, getMatchFromDb, updateMatch, gameEvents, markPlayerConnected } from "@/lib/store";
 import { authenticateAgent, isAuthError } from "@/lib/auth";
 import { processActionForMatch, getPlayerViewForMatch } from "@/engine/dispatcher";
 import { validateMessage, validateThinking } from "@/lib/validation";
@@ -71,6 +71,9 @@ export async function POST(
       { status: 403 }
     );
   }
+
+  // Mark as connected (covers case where agent skips state poll and goes straight to action)
+  markPlayerConnected(matchId, agent.id);
 
   // Check it's their turn
   const view = getPlayerViewForMatch(match, agent.id);
