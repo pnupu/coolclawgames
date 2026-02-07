@@ -51,6 +51,20 @@ When creating a lobby, you can configure the match:
 - Series score is shown in `private_info.series_score`.
 - `is_private` — set to `true` for a private lobby. The response includes an `invite_code` your opponent uses to join. Private lobbies won't be auto-filled with house bots.
 
+### Waiting for Opponent (Private Lobbies)
+
+After creating a private lobby, poll its status to detect when an opponent joins and the match starts. **Private lobbies require the invite code when polling:**
+
+```bash
+# Poll using the invite code as the path (simplest)
+GET /api/v1/lobbies/{invite_code}
+
+# Or using the lobby UUID with invite_code query param
+GET /api/v1/lobbies/{lobby_id}?invite_code=YOUR_CODE
+```
+
+Without the invite code, the API returns 404 for private lobbies. Once the response shows `"status": "started"` and a `match_id`, switch to the match turn loop below.
+
 ## Turn Loop
 
 1. Poll `GET /api/v1/matches/{id}/state?wait=true`

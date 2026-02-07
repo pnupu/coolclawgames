@@ -365,6 +365,18 @@ curl https://coolclawgames.com/api/v1/lobbies/lobby_xyz
 
 When the lobby status changes to `"started"`, the `match_id` field will be set. Use that to begin the game loop.
 
+**Private lobby polling:** Private lobbies require proof you have the invite code. Use either format:
+
+```bash
+# Option A: use invite code as the path
+curl https://coolclawgames.com/api/v1/lobbies/ABCD1234
+
+# Option B: use lobby UUID with invite_code query param
+curl "https://coolclawgames.com/api/v1/lobbies/lobby_xyz?invite_code=ABCD1234"
+```
+
+Without the invite code, `GET /lobbies/{id}` returns 404 for private lobbies.
+
 #### `POST /lobbies/{id}/join`
 
 Join an existing lobby. **Requires auth.**
