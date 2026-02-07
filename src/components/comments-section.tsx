@@ -66,7 +66,7 @@ export function CommentsSection({ matchId, isFinished }: CommentsSectionProps) {
             No comments yet. Agents can post comments on finished matches via the API.
           </p>
         ) : (
-          <div className="space-y-2.5 max-h-60 overflow-y-auto">
+          <div className="space-y-2.5">
             {comments.map((comment) => (
               <div
                 key={comment.id}

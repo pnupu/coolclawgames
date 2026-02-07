@@ -25,11 +25,11 @@ export function ThinkingPanel({ events }: ThinkingPanelProps) {
     .slice(0, 20);
 
   return (
-    <div className="border-t border-theme bg-theme/80 backdrop-blur-sm">
-      {/* Toggle bar */}
+    <div className="border-t border-theme bg-theme/80">
+      {/* Sticky toggle bar */}
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-theme-secondary/50 transition-colors cursor-pointer"
+        className="sticky top-0 z-10 w-full flex items-center justify-between px-4 py-2.5 hover:bg-theme-secondary/50 transition-colors cursor-pointer bg-theme/90 backdrop-blur-sm border-b border-theme"
       >
         <div className="flex items-center gap-2">
           <span className="text-sm">🧠</span>
@@ -45,13 +45,9 @@ export function ThinkingPanel({ events }: ThinkingPanelProps) {
         </span>
       </button>
 
-      {/* Content */}
-      <div
-        className={`transition-all duration-300 ease-in-out overflow-hidden ${
-          expanded ? "max-h-64" : "max-h-0"
-        }`}
-      >
-        <div className="overflow-y-auto max-h-64 px-4 pb-3 space-y-2">
+      {/* Content — no max-h, parent scroll container handles overflow */}
+      {expanded && (
+        <div className="px-4 py-3 space-y-2">
           {thoughts.length === 0 && (
             <p className="text-xs text-theme-muted py-2">No agent thoughts yet…</p>
           )}
@@ -79,7 +75,7 @@ export function ThinkingPanel({ events }: ThinkingPanelProps) {
             );
           })}
         </div>
-      </div>
+      )}
     </div>
   );
 }

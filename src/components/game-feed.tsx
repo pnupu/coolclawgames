@@ -175,9 +175,9 @@ export function GameFeed({ events }: GameFeedProps) {
   }, [events.length]);
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-theme bg-theme-secondary/30">
+    <div className="flex flex-col">
+      {/* Sticky header — stays visible while scrolling the feed */}
+      <div className="sticky top-0 z-10 flex items-center gap-2 px-4 py-3 border-b border-theme bg-theme-secondary/80 backdrop-blur-sm">
         <span className="text-sm">📜</span>
         <h2 className="text-sm font-bold uppercase tracking-wider text-theme-secondary font-display">
           Game Feed
@@ -187,10 +187,10 @@ export function GameFeed({ events }: GameFeedProps) {
         </span>
       </div>
 
-      {/* Scrollable feed */}
-      <div className="flex-1 overflow-y-auto px-3 py-2 space-y-0.5 scroll-smooth">
+      {/* Feed content — scrolls with the parent container */}
+      <div className="px-3 py-2 space-y-0.5">
         {events.length === 0 && (
-          <div className="flex items-center justify-center h-full">
+          <div className="flex items-center justify-center py-12">
             <p className="text-theme-muted text-sm">Waiting for game events…</p>
           </div>
         )}

@@ -276,7 +276,7 @@ export function GameBoard({ spectatorView, events, spectatorToken }: GameBoardPr
           : "AI Werewolf";
 
   return (
-    <div className="flex flex-col h-screen bg-theme text-theme-primary font-body">
+    <div className="flex flex-col h-screen bg-theme text-theme-primary font-body overflow-hidden">
       {/* ── Header ───────────────────────────────────────────── */}
       <header className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-theme bg-theme/90 backdrop-blur-sm">
         <div className="flex items-center gap-3">
@@ -315,23 +315,60 @@ export function GameBoard({ spectatorView, events, spectatorToken }: GameBoardPr
       </header>
 
       {/* ── Main content ─────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row min-h-0">
         {/* Left sidebar — Players */}
         <aside className="shrink-0 w-full lg:w-64 xl:w-72 border-b lg:border-b-0 lg:border-r border-theme p-4 overflow-y-auto bg-theme-secondary/30">
           <PlayerList players={players} currentTurn={current_turn} />
         </aside>
 
-        {/* Center — Game board + Feed */}
-        <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
-          {/* Visual game board (game-specific) -- always visible for tic-tac-toe */}
+        {/* Center — Game board (pinned) + scrollable feed/thoughts/comments */}
+        <main className="flex-1 min-w-0 flex flex-col min-h-0">
+          {/* Visual game board — pinned at top, never scrolls away */}
           {game_type === "tic-tac-toe" && (
             <div className="shrink-0 border-b border-theme bg-theme-secondary/20">
               <TicTacToeBoard spectatorView={spectatorView} />
             </div>
           )}
 
-          {/* Game Feed */}
-          <GameFeed events={events} />
+          {/* Scrollable area: feed + thinking + rematch + comments */}
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            {/* Game Feed (no longer manages its own scroll) */}
+            <GameFeed events={events} />
+
+            {/* Thinking Panel — scrolls with feed */}
+            <ThinkingPanel events={events} />
+
+            {/* Human coaching panel */}
+            {showHumanPanel && (
+              <HumanDirectivePanel
+                matchId={match_id}
+                spectatorToken={spectatorToken}
+                players={players}
+              />
+            )}
+
+            {/* Rematch banner */}
+            {isFinished && spectatorView.next_match_id && (
+              <div className="border-t border-theme bg-[var(--claw-blue)]/10 px-4 py-3">
+                <div className="flex items-center justify-center gap-3">
+                  <span className="text-sm font-semibold text-theme-primary">
+                    Rematch started!
+                  </span>
+                  <Link
+                    href={`/matches/${spectatorView.next_match_id}`}
+                    className="inline-flex items-center gap-1.5 px-4 py-1.5 text-sm font-bold rounded-theme-md
+                      bg-[var(--claw-blue)] text-white hover:bg-[var(--claw-blue)]/80 transition-colors"
+                  >
+                    Watch Rematch
+                    <span aria-hidden="true">&rarr;</span>
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {/* Comments (post-game) */}
+            <CommentsSection matchId={match_id} isFinished={isFinished} />
+          </div>
         </main>
 
         {/* Right sidebar — Phase + Votes / Result */}
@@ -346,39 +383,6 @@ export function GameBoard({ spectatorView, events, spectatorToken }: GameBoardPr
           )}
         </aside>
       </div>
-
-      {showHumanPanel && (
-        <HumanDirectivePanel
-          matchId={match_id}
-          spectatorToken={spectatorToken}
-          players={players}
-        />
-      )}
-
-      {/* ── Rematch banner ───────────────────────────────────── */}
-      {isFinished && spectatorView.next_match_id && (
-        <div className="shrink-0 border-t border-theme bg-[var(--claw-blue)]/10 px-4 py-3">
-          <div className="flex items-center justify-center gap-3">
-            <span className="text-sm font-semibold text-theme-primary">
-              Rematch started!
-            </span>
-            <Link
-              href={`/matches/${spectatorView.next_match_id}`}
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 text-sm font-bold rounded-theme-md
-                bg-[var(--claw-blue)] text-white hover:bg-[var(--claw-blue)]/80 transition-colors"
-            >
-              Watch Rematch
-              <span aria-hidden="true">&rarr;</span>
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {/* ── Bottom — Thinking Panel ──────────────────────────── */}
-      <ThinkingPanel events={events} />
-
-      {/* ── Comments (post-game only) ────────────────────────── */}
-      <CommentsSection matchId={match_id} isFinished={isFinished} />
 
       {/* ── Floating emoji reactions ───────────────────────────── */}
       <FloatingReactions matchId={match_id} />
