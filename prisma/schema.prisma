@@ -21,14 +21,18 @@ model Agent {
 }
 
 model Lobby {
-  id         String   @id @default(uuid())
-  gameType   String   @map("game_type")
-  players    String[] @default([])
-  maxPlayers Int      @map("max_players")
-  minPlayers Int      @map("min_players")
-  status     String   @default("waiting") // waiting | starting | started | closed
-  createdAt  DateTime @default(now()) @map("created_at")
-  matchId    String?  @map("match_id")
+  id             String   @id @default(uuid())
+  gameType       String   @map("game_type")
+  players        String[] @default([])
+  maxPlayers     Int      @map("max_players")
+  minPlayers     Int      @map("min_players")
+  status         String   @default("waiting") // waiting | starting | started | closed
+  createdAt      DateTime @default(now()) @map("created_at")
+  lastActivityAt DateTime @default(now()) @map("last_activity_at")
+  matchId        String?  @map("match_id")
+  isPrivate      Boolean  @default(false) @map("is_private")
+  inviteCode     String?  @map("invite_code")
+  settings       Json?
 
   @@map("lobbies")
 }

@@ -109,12 +109,16 @@ async function doInitialize(): Promise<void> {
         min_players: l.minPlayers,
         status: l.status as LobbyInfo["status"],
         created_at: l.createdAt.getTime(),
-        last_activity_at: l.createdAt.getTime(),
-        is_private: false,
-        invite_code: undefined,
+        last_activity_at: l.lastActivityAt.getTime(),
+        is_private: l.isPrivate,
+        invite_code: l.inviteCode ?? undefined,
         match_id: l.matchId ?? undefined,
+        settings: (l.settings as Record<string, unknown>) ?? undefined,
       };
       lobbies.set(lobby.id, lobby);
+      if (lobby.invite_code) {
+        lobbiesByInviteCode.set(normalizeInviteCode(lobby.invite_code), lobby.id);
+      }
     }
 
     // Load matches
@@ -206,7 +210,6 @@ export function createLobby(lobby: LobbyInfo): void {
   if (lobby.invite_code) {
     lobbiesByInviteCode.set(lobby.invite_code, lobby.id);
   }
-  if (lobby.is_private) return;
 
   prisma.lobby
     .create({
@@ -218,7 +221,11 @@ export function createLobby(lobby: LobbyInfo): void {
         minPlayers: lobby.min_players,
         status: lobby.status,
         createdAt: new Date(lobby.created_at),
+        lastActivityAt: new Date(lobby.last_activity_at),
         matchId: lobby.match_id ?? null,
+        isPrivate: lobby.is_private ?? false,
+        inviteCode: lobby.invite_code ?? null,
+        settings: lobby.settings ? JSON.parse(JSON.stringify(lobby.settings)) : undefined,
       },
     })
     .catch((err) => console.error("[store] Failed to persist lobby:", err));
@@ -256,15 +263,12 @@ export function updateLobby(id: LobbyId, updates: Partial<LobbyInfo>): void {
       }
     }
 
-    if (lobby.is_private) {
-      return;
-    }
-
     // Build Prisma update data from the updates
     const dbUpdates: Record<string, unknown> = {};
     if (updates.players !== undefined) dbUpdates.players = updates.players;
     if (updates.status !== undefined) dbUpdates.status = updates.status;
     if (updates.match_id !== undefined) dbUpdates.matchId = updates.match_id;
+    if (updates.last_activity_at !== undefined) dbUpdates.lastActivityAt = new Date(updates.last_activity_at);
 
     if (Object.keys(dbUpdates).length > 0) {
       prisma.lobby
@@ -280,7 +284,6 @@ export function deleteLobby(id: LobbyId): void {
     lobbiesByInviteCode.delete(lobby.invite_code);
   }
   lobbies.delete(id);
-  if (lobby?.is_private) return;
 
   prisma.lobby
     .deleteMany({ where: { id } })
