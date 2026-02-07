@@ -9,7 +9,10 @@ export async function GET(
 ) {
   const { id } = await params;
 
-  const lobby = getLobby(id) ?? getLobbyByInviteCode(normalizeInviteCode(id));
+  const lobbyById = getLobby(id);
+  const normalizedPathCode = normalizeInviteCode(id);
+  const lobbyByInviteCode = lobbyById ? undefined : getLobbyByInviteCode(normalizedPathCode);
+  const lobby = lobbyById ?? lobbyByInviteCode;
   if (!lobby) {
     return NextResponse.json(
       { success: false, error: "Lobby not found" } satisfies ApiError,
@@ -18,12 +21,17 @@ export async function GET(
   }
 
   if (lobby.is_private) {
-    const inviteCode = new URL(request.url).searchParams.get("invite_code")?.trim().toUpperCase();
-    if (!inviteCode || inviteCode !== lobby.invite_code) {
-      return NextResponse.json(
-        { success: false, error: "Lobby not found" } satisfies ApiError,
-        { status: 404 }
-      );
+    // If found by invite code in the path, the caller already proved they have the code
+    const foundByInviteCode = !!lobbyByInviteCode;
+    if (!foundByInviteCode) {
+      // Found by UUID — require invite_code query param
+      const inviteCode = new URL(request.url).searchParams.get("invite_code")?.trim().toUpperCase();
+      if (!inviteCode || inviteCode !== lobby.invite_code) {
+        return NextResponse.json(
+          { success: false, error: "Lobby not found" } satisfies ApiError,
+          { status: 404 }
+        );
+      }
     }
   }
 
