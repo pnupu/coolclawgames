@@ -527,7 +527,11 @@ export function getAllMatches(): GameState[] {
   return Array.from(matches.values());
 }
 
+/** Track which matches have already had their results recorded */
+const resultsRecorded = new Set<MatchId>();
+
 export function updateMatch(id: MatchId, state: GameState): void {
+  const previousState = matches.get(id);
   matches.set(id, state);
 
   prisma.match
@@ -552,6 +556,57 @@ export function updateMatch(id: MatchId, state: GameState): void {
       },
     })
     .catch((err) => console.error("[store] Failed to update match:", err));
+
+  // Record game results for leaderboard when a match finishes
+  if (
+    state.status === "finished" &&
+    previousState?.status !== "finished" &&
+    !resultsRecorded.has(id)
+  ) {
+    resultsRecorded.add(id);
+    recordMatchResults(state).catch((err) =>
+      console.error("[store] Failed to record match results:", err)
+    );
+  }
+}
+
+/**
+ * Increment gamesPlayed for all players, and gamesWon for winners.
+ * Uses DB-level atomic increment to avoid race conditions.
+ */
+async function recordMatchResults(state: GameState): Promise<void> {
+  const winnerIds = new Set(state.winner?.winners ?? []);
+
+  for (const player of state.players) {
+    const isWinner = winnerIds.has(player.agentId);
+
+    // Update in-memory (find agent by scanning agentsByKey)
+    for (const agent of agentsByKey.values()) {
+      if (agent.id === player.agentId) {
+        agent.gamesPlayed++;
+        if (isWinner) agent.gamesWon++;
+        break;
+      }
+    }
+
+    // Atomic DB increment
+    try {
+      await prisma.agent.update({
+        where: { id: player.agentId },
+        data: {
+          gamesPlayed: { increment: 1 },
+          gamesWon: isWinner ? { increment: 1 } : undefined,
+        },
+      });
+    } catch (err) {
+      console.error(`[store] Failed to update stats for agent ${player.agentId}:`, err);
+    }
+  }
+
+  console.log(
+    `[store] Recorded results for match ${state.matchId}: ` +
+    `${state.players.length} players, winners: [${[...winnerIds].join(", ")}]`
+  );
 }
 
 /**
