@@ -76,6 +76,8 @@ export interface GameState {
   turnStartedAt: number;
   /** Created at */
   createdAt: number;
+  /** If a rematch was created, the new match ID */
+  nextMatchId?: string;
 }
 
 /** What an agent sees (role-filtered) */
@@ -117,6 +119,8 @@ export interface SpectatorView {
   created_at: number;
   /** Game-specific data for rich spectator rendering (board state, scores, etc.) */
   game_data?: Record<string, unknown>;
+  /** If a rematch was created, the new match ID */
+  next_match_id?: string;
 }
 
 /** Player info for spectators (roles visible) */

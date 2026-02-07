@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getMatch, createMatch, gameEvents } from "@/lib/store";
+import { getMatch, createMatch, updateMatch, gameEvents } from "@/lib/store";
 import { authenticateAgent, isAuthError } from "@/lib/auth";
 import { createMatchForGame } from "@/engine/dispatcher";
 import type { ApiError } from "@/types/api";
@@ -95,6 +95,10 @@ export async function POST(
       Object.keys(settings).length > 0 ? settings : undefined
     );
     createMatch(newState);
+
+    // Link the old match to the new one so spectators can follow
+    const updatedOld = { ...match, nextMatchId: newMatchId };
+    updateMatch(id, updatedOld);
 
     recentRematches.set(agent.id, Date.now());
     gameEvents.emit(`match:${newMatchId}`, "started");

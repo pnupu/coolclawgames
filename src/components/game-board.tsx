@@ -72,6 +72,84 @@ function ShareButton({
   );
 }
 
+function MatchResult({
+  winner,
+  players,
+  gameData,
+}: {
+  winner: { team: string; reason: string };
+  players: SpectatorView["players"];
+  gameData?: Record<string, unknown>;
+}) {
+  const seriesScore = gameData?.series_score as Record<string, number> | undefined;
+  const bestOf = gameData?.best_of as number | undefined;
+  const marksByPlayer = gameData?.marks_by_player as Record<string, string> | undefined;
+
+  return (
+    <div className="rounded-theme-lg border border-theme bg-gradient-to-br from-[var(--warning)]/15 to-[var(--warning)]/5 p-4 shadow-theme-card">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-xs font-bold uppercase tracking-wider text-theme-tertiary font-display">
+          Match Result
+        </span>
+        <span className="text-xs font-mono text-theme-tertiary bg-theme-secondary/50 px-2 py-0.5 rounded-theme-sm">
+          Final
+        </span>
+      </div>
+
+      <div className="flex items-center gap-3 mb-4">
+        <span className="text-3xl">🏆</span>
+        <div>
+          <p className="text-lg font-black text-[var(--warning)] font-display">
+            Game Over
+          </p>
+        </div>
+      </div>
+
+      <div className="bg-theme/60 rounded-theme-md p-3 mb-3 border border-theme">
+        <p className="text-sm font-semibold text-theme-primary text-center">
+          {winner.reason}
+        </p>
+      </div>
+
+      {/* Series score summary for tic-tac-toe-like games */}
+      {seriesScore && bestOf && bestOf > 1 && marksByPlayer && (
+        <div className="bg-theme/40 rounded-theme-md p-3 border border-theme">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-theme-tertiary mb-2 text-center">
+            Series Score
+          </p>
+          <div className="flex items-center justify-center gap-4">
+            {Object.entries(marksByPlayer).map(([name, mark]) => (
+              <div key={name} className="flex items-center gap-2">
+                <span className="text-xs font-bold text-theme-primary truncate max-w-[70px]">
+                  {name}
+                </span>
+                <span className="text-xs text-theme-secondary">({mark})</span>
+                <span className="font-mono text-lg font-black text-theme-primary">
+                  {seriesScore[mark] ?? 0}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Player list */}
+      <div className="mt-3 space-y-1.5">
+        {players.map((p) => (
+          <div
+            key={p.agent_id}
+            className="flex items-center gap-2 text-xs"
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${p.alive ? "bg-[var(--success)]" : "bg-[var(--error)]"}`} />
+            <span className="text-theme-primary font-medium truncate">{p.agent_name}</span>
+            <span className="text-theme-tertiary ml-auto">{p.role}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 interface GameBoardProps {
   spectatorView: SpectatorView;
   events: SpectatorEvent[];
@@ -256,10 +334,16 @@ export function GameBoard({ spectatorView, events, spectatorToken }: GameBoardPr
           <GameFeed events={events} />
         </main>
 
-        {/* Right sidebar — Phase + Votes */}
+        {/* Right sidebar — Phase + Votes / Result */}
         <aside className="shrink-0 w-full lg:w-64 xl:w-72 border-t lg:border-t-0 lg:border-l border-theme p-4 space-y-4 overflow-y-auto bg-theme-secondary/30">
-          <PhaseIndicator phase={phase} round={round} />
-          <VoteTracker events={events} phase={phase} players={players} />
+          {isFinished && spectatorView.winner ? (
+            <MatchResult winner={spectatorView.winner} players={players} gameData={spectatorView.game_data} />
+          ) : (
+            <>
+              <PhaseIndicator phase={phase} round={round} />
+              <VoteTracker events={events} phase={phase} players={players} />
+            </>
+          )}
         </aside>
       </div>
 
@@ -269,6 +353,25 @@ export function GameBoard({ spectatorView, events, spectatorToken }: GameBoardPr
           spectatorToken={spectatorToken}
           players={players}
         />
+      )}
+
+      {/* ── Rematch banner ───────────────────────────────────── */}
+      {isFinished && spectatorView.next_match_id && (
+        <div className="shrink-0 border-t border-theme bg-[var(--claw-blue)]/10 px-4 py-3">
+          <div className="flex items-center justify-center gap-3">
+            <span className="text-sm font-semibold text-theme-primary">
+              Rematch started!
+            </span>
+            <Link
+              href={`/matches/${spectatorView.next_match_id}`}
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 text-sm font-bold rounded-theme-md
+                bg-[var(--claw-blue)] text-white hover:bg-[var(--claw-blue)]/80 transition-colors"
+            >
+              Watch Rematch
+              <span aria-hidden="true">&rarr;</span>
+            </Link>
+          </div>
+        </div>
       )}
 
       {/* ── Bottom — Thinking Panel ──────────────────────────── */}

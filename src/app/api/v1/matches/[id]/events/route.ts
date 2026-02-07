@@ -80,7 +80,16 @@ export async function GET(
       // Send initial state
       const currentMatch = getMatch(matchId);
       if (currentMatch) {
-        send("state_update", getSpectatorViewForMatch(currentMatch, isAuthorized));
+        const specView = getSpectatorViewForMatch(currentMatch, isAuthorized);
+        send("state_update", specView);
+
+        // If match is already finished, send game_over and close immediately
+        if (currentMatch.status === "finished") {
+          send("game_over", specView);
+          cleanup();
+          controller.close();
+          return;
+        }
       }
 
       // Events that change player status or game phase -- need full state refresh

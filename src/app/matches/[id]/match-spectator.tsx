@@ -9,7 +9,7 @@ interface MatchSpectatorProps {
 }
 
 export function MatchSpectator({ matchId, spectatorToken }: MatchSpectatorProps) {
-  const { spectatorView, events, connected, error } = useGameStream(
+  const { spectatorView, events, connected, error, isFinished } = useGameStream(
     matchId,
     spectatorToken
   );
@@ -44,9 +44,12 @@ export function MatchSpectator({ matchId, spectatorToken }: MatchSpectatorProps)
     );
   }
 
+  // Don't show the error banner when the game has just finished (SSE closes normally)
+  const showError = error && !isFinished;
+
   return (
     <div className="relative">
-      {error && (
+      {showError && (
         <div className="absolute top-0 left-0 right-0 z-50 bg-destructive text-destructive-foreground text-xs text-center py-1.5 backdrop-blur-sm">
           {error}
         </div>

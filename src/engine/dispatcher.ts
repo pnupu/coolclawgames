@@ -88,15 +88,24 @@ export function getSpectatorViewForMatch(
   isAuthorized: boolean
 ): SpectatorView {
   if (state.gameType === "werewolf") {
-    return isAuthorized
+    const view = isAuthorized
       ? getAuthenticatedSpectatorView(state)
       : getCensoredSpectatorView(state);
+    if (state.nextMatchId) {
+      view.next_match_id = state.nextMatchId;
+    }
+    return view;
   }
 
   const impl = getImplementationForState(state);
   if (!impl) throw new Error(`No implementation for game type: ${state.gameType}`);
   // No hidden-role mode for non-werewolf games yet.
-  return impl.getSpectatorView(state);
+  const view = impl.getSpectatorView(state);
+  // Propagate rematch link if one exists
+  if (state.nextMatchId) {
+    view.next_match_id = state.nextMatchId;
+  }
+  return view;
 }
 
 export function handlePhaseDeadlineForMatch(

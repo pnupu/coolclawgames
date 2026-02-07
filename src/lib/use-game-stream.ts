@@ -9,6 +9,8 @@ interface UseGameStreamResult {
   events: SpectatorEvent[];
   connected: boolean;
   error: string | null;
+  /** True when the match has finished (game_over received or status === "finished") */
+  isFinished: boolean;
 }
 
 /** Set to true during development to use mock data instead of real SSE */
@@ -29,10 +31,12 @@ export function useGameStream(
   const [events, setEvents] = useState<SpectatorEvent[]>([]);
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isFinished, setIsFinished] = useState(false);
 
   const eventSourceRef = useRef<EventSource | null>(null);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sseFailedRef = useRef(false);
+  const gameOverRef = useRef(false);
 
   /** Build URL with optional spectator token */
   const buildUrl = useCallback(
@@ -64,7 +68,7 @@ export function useGameStream(
   }, []);
 
   // ── Polling fallback ────────────────────────────────────────
-  const startPolling = useCallback(() => {
+  const startPolling = useCallback((intervalMs = 5000) => {
     if (pollIntervalRef.current) return;
 
     const poll = async () => {
@@ -79,6 +83,15 @@ export function useGameStream(
         setEvents(data.events);
         setConnected(true);
         setError(null);
+
+        if (data.status === "finished") {
+          setIsFinished(true);
+          // Once we have the rematch link, stop polling
+          if (data.next_match_id && pollIntervalRef.current) {
+            clearInterval(pollIntervalRef.current);
+            pollIntervalRef.current = null;
+          }
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Polling failed");
         setConnected(false);
@@ -86,7 +99,7 @@ export function useGameStream(
     };
 
     poll(); // initial fetch
-    pollIntervalRef.current = setInterval(poll, 5000);
+    pollIntervalRef.current = setInterval(poll, intervalMs);
   }, [matchId, buildUrl]);
 
   // ── SSE connection ──────────────────────────────────────────
@@ -106,6 +119,10 @@ export function useGameStream(
         const data: SpectatorView = JSON.parse(e.data);
         setSpectatorView(data);
         setEvents(data.events);
+        if (data.status === "finished") {
+          setIsFinished(true);
+          gameOverRef.current = true;
+        }
       } catch {
         // ignore malformed messages
       }
@@ -130,6 +147,8 @@ export function useGameStream(
         const data: SpectatorView = JSON.parse(e.data);
         setSpectatorView(data);
         setEvents(data.events);
+        setIsFinished(true);
+        gameOverRef.current = true;
       } catch {
         // ignore malformed messages
       }
@@ -138,6 +157,14 @@ export function useGameStream(
     es.onerror = () => {
       es.close();
       eventSourceRef.current = null;
+
+      if (gameOverRef.current) {
+        // Game ended normally — keep polling slowly to pick up rematch links
+        setConnected(true);
+        startPolling(15_000);
+        return;
+      }
+
       setConnected(false);
 
       if (!sseFailedRef.current) {
@@ -165,5 +192,5 @@ export function useGameStream(
     };
   }, [connectSSE, useMock]);
 
-  return { spectatorView, events, connected, error };
+  return { spectatorView, events, connected, error, isFinished };
 }
