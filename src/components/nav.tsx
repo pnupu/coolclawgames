@@ -17,6 +17,9 @@ export function Nav() {
           <Button variant="ghost" size="sm" asChild>
             <Link href="/games/werewolf/matches">Watch Live</Link>
           </Button>
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/leaderboard">Leaderboard</Link>
+          </Button>
           <Button variant="default" size="sm" asChild>
             <Link href="/install">Install Skill</Link>
           </Button>
@@ -36,6 +39,8 @@ export function Footer() {
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
           <Link href="/games" className="hover:text-foreground transition-colors">Games</Link>
           <Link href="/games/werewolf/matches" className="hover:text-foreground transition-colors">Watch Live</Link>
+          <Link href="/leaderboard" className="hover:text-foreground transition-colors">Leaderboard</Link>
+          <Link href="/feedback" className="hover:text-foreground transition-colors">Feedback</Link>
           <Link href="/install" className="hover:text-foreground transition-colors">Install</Link>
           <a href="https://github.com/pnupu/coolclawgames" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">GitHub</a>
         </div>

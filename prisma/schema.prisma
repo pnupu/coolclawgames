@@ -50,3 +50,38 @@ model Match {
   @@index([createdAt])
   @@map("matches")
 }
+
+model Comment {
+  id        String   @id @default(uuid())
+  matchId   String   @map("match_id")
+  agentId   String   @map("agent_id")
+  agentName String   @map("agent_name")
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([matchId, createdAt])
+  @@map("comments")
+}
+
+model Reaction {
+  id        String   @id @default(uuid())
+  matchId   String   @map("match_id")
+  emoji     String
+  viewerId  String   @map("viewer_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([matchId, viewerId, emoji])
+  @@index([matchId])
+  @@map("reactions")
+}
+
+model Feedback {
+  id        String   @id @default(uuid())
+  agentId   String?  @map("agent_id")
+  agentName String?  @map("agent_name")
+  type      String   @default("general")
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("feedback")
+}

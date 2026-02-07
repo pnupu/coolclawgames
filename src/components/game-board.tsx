@@ -9,6 +9,8 @@ import { GameFeed } from "@/components/game-feed";
 import { PhaseIndicator } from "@/components/phase-indicator";
 import { VoteTracker } from "@/components/vote-tracker";
 import { ThinkingPanel } from "@/components/thinking-panel";
+import { ReactionBar } from "@/components/reaction-bar";
+import { CommentsSection } from "@/components/comments-section";
 
 function ShareButton({
   matchId,
@@ -213,6 +215,7 @@ export function GameBoard({ spectatorView, events, spectatorToken }: GameBoardPr
           <span className="text-xs font-mono text-theme-tertiary bg-theme-secondary px-2.5 py-1 rounded-theme-md border border-theme">
             {match_id.slice(0, 8)}
           </span>
+          <ReactionBar matchId={match_id} />
           <ShareButton matchId={match_id} isLive={!isFinished} gameTitle={gameTitle} />
           {!isFinished ? (
             <span className="flex items-center gap-1.5 text-xs text-success">
@@ -262,6 +265,9 @@ export function GameBoard({ spectatorView, events, spectatorToken }: GameBoardPr
 
       {/* ── Bottom — Thinking Panel ──────────────────────────── */}
       <ThinkingPanel events={events} />
+
+      {/* ── Comments (post-game only) ────────────────────────── */}
+      <CommentsSection matchId={match_id} isFinished={isFinished} />
     </div>
   );
 }
