@@ -195,6 +195,7 @@ export const BattleshipGame: GameImplementation = {
   },
 
   getSpectatorView(state): SpectatorView {
+    const phaseData = getPhaseData(state);
     const players: SpectatorPlayerInfo[] = state.players.map((p) => ({
       agent_id: p.agentId,
       agent_name: p.agentName,
@@ -226,6 +227,28 @@ export const BattleshipGame: GameImplementation = {
         ? state.turnOrder[state.currentTurnIndex % state.turnOrder.length] ?? null
         : null;
 
+    const spectatorBoards = state.players.map((player) => {
+      const opponentId = state.turnOrder.find((id) => id !== player.agentId) ?? "";
+      return {
+        agent_id: player.agentId,
+        agent_name: player.agentName,
+        fleet_board: renderOwnBoard(phaseData, player.agentId, opponentId),
+        targeting_board: renderEnemyBoard(phaseData, player.agentId, opponentId),
+        ships_remaining: remainingShipCellsForPlayer(
+          phaseData,
+          player.agentId,
+          opponentId
+        ),
+        shots_taken: (phaseData.shotsByPlayer[player.agentId] ?? []).length,
+        hits_landed: (phaseData.hitCellsByPlayer[player.agentId] ?? []).length,
+      };
+    });
+
+    const gameData: Record<string, unknown> = {
+      grid_size: phaseData.gridSize,
+      players: spectatorBoards,
+    };
+
     return {
       match_id: state.matchId,
       game_type: state.gameType,
@@ -239,6 +262,7 @@ export const BattleshipGame: GameImplementation = {
         ? { team: state.winner.team, reason: state.winner.reason }
         : undefined,
       created_at: state.createdAt,
+      game_data: gameData,
     };
   },
 

@@ -11,6 +11,8 @@ import { VoteTracker } from "@/components/vote-tracker";
 import { ThinkingPanel } from "@/components/thinking-panel";
 import { FloatingReactions } from "@/components/floating-reactions";
 import { TicTacToeBoard } from "@/components/tic-tac-toe-board";
+import { RockPaperScissorsBoard } from "@/components/rock-paper-scissors-board";
+import { BattleshipBoard } from "@/components/battleship-board";
 import { CommentsSection } from "@/components/comments-section";
 
 function ShareButton({
@@ -76,14 +78,18 @@ function MatchResult({
   winner,
   players,
   gameData,
+  gameType,
 }: {
   winner: { team: string; reason: string };
   players: SpectatorView["players"];
   gameData?: Record<string, unknown>;
+  gameType: SpectatorView["game_type"];
 }) {
   const seriesScore = gameData?.series_score as Record<string, number> | undefined;
   const bestOf = gameData?.best_of as number | undefined;
   const marksByPlayer = gameData?.marks_by_player as Record<string, string> | undefined;
+  const rpsScoresByName = gameData?.scores_by_name as Record<string, number> | undefined;
+  const rpsTargetWins = gameData?.target_wins as number | undefined;
 
   return (
     <div className="rounded-theme-lg border border-theme bg-gradient-to-br from-[var(--warning)]/15 to-[var(--warning)]/5 p-4 shadow-theme-card">
@@ -132,6 +138,28 @@ function MatchResult({
           </div>
         </div>
       )}
+
+      {gameType === "rock-paper-scissors" &&
+        rpsScoresByName &&
+        rpsTargetWins && (
+          <div className="bg-theme/40 rounded-theme-md p-3 border border-theme">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-theme-tertiary mb-2 text-center">
+              Series Score (First to {rpsTargetWins})
+            </p>
+            <div className="space-y-1.5">
+              {Object.entries(rpsScoresByName).map(([name, score]) => (
+                <div key={name} className="flex items-center text-xs">
+                  <span className="text-theme-primary font-semibold truncate max-w-[130px]">
+                    {name}
+                  </span>
+                  <span className="ml-auto font-mono text-lg font-black text-theme-primary">
+                    {score}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
       {/* Player list */}
       <div className="mt-3 space-y-1.5">
@@ -267,11 +295,13 @@ export function GameBoard({ spectatorView, events, spectatorToken }: GameBoardPr
       ? "AI Kingdom Operator"
       : game_type === "frontier-convoy"
         ? "AI Frontier Convoy"
-        : game_type === "council-of-spies"
+      : game_type === "council-of-spies"
           ? "AI Council of Spies"
       : game_type === "rock-paper-scissors"
         ? "AI Rock Paper Scissors"
-        : game_type === "tic-tac-toe"
+      : game_type === "battleship"
+        ? "AI Battleship"
+      : game_type === "tic-tac-toe"
           ? "AI Tic Tac Toe"
           : "AI Werewolf";
 
@@ -324,9 +354,19 @@ export function GameBoard({ spectatorView, events, spectatorToken }: GameBoardPr
         {/* Center — Game board (pinned) + scrollable feed/thoughts/comments */}
         <main className="flex-1 min-w-0 flex flex-col min-h-0">
           {/* Visual game board — pinned at top, never scrolls away */}
-          {game_type === "tic-tac-toe" && (
+          {(game_type === "tic-tac-toe" ||
+            game_type === "rock-paper-scissors" ||
+            game_type === "battleship") && (
             <div className="shrink-0 border-b border-theme bg-theme-secondary/20">
-              <TicTacToeBoard spectatorView={spectatorView} />
+              {game_type === "tic-tac-toe" && (
+                <TicTacToeBoard spectatorView={spectatorView} />
+              )}
+              {game_type === "rock-paper-scissors" && (
+                <RockPaperScissorsBoard spectatorView={spectatorView} />
+              )}
+              {game_type === "battleship" && (
+                <BattleshipBoard spectatorView={spectatorView} />
+              )}
             </div>
           )}
 
@@ -374,7 +414,12 @@ export function GameBoard({ spectatorView, events, spectatorToken }: GameBoardPr
         {/* Right sidebar — Phase + Votes / Result */}
         <aside className="shrink-0 w-full max-h-56 lg:max-h-none lg:w-64 xl:w-72 border-t lg:border-t-0 lg:border-l border-theme p-3 sm:p-4 space-y-4 overflow-y-auto bg-theme-secondary/30">
           {isFinished && spectatorView.winner ? (
-            <MatchResult winner={spectatorView.winner} players={players} gameData={spectatorView.game_data} />
+            <MatchResult
+              winner={spectatorView.winner}
+              players={players}
+              gameData={spectatorView.game_data}
+              gameType={game_type}
+            />
           ) : (
             <>
               <PhaseIndicator phase={phase} round={round} />

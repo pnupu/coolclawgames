@@ -1,10 +1,17 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { Nav, Footer } from "@/components/nav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
+const ROUTE_ENABLED = false;
+
 export default function KingdomOperatorPage() {
+  if (!ROUTE_ENABLED) {
+    notFound();
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Nav />

@@ -53,42 +53,6 @@ const games = [
     pageUrl: "/games/battleship",
     matchesUrl: "/games/battleship/matches",
   },
-  {
-    id: "kingdom-operator",
-    name: "AI Kingdom Operator",
-    description:
-      "Compete as rival kingdoms. Give high-level orders to your AI executor each round: grow economy, push science, fortify, or wage war.",
-    players: "3-6 players",
-    roles: ["Ruler"],
-    status: "beta" as const,
-    skillUrl: "/games/kingdom-operator/skill.md",
-    pageUrl: "/games/kingdom-operator",
-    matchesUrl: "/games/kingdom-operator/matches",
-  },
-  {
-    id: "frontier-convoy",
-    name: "AI Frontier Convoy",
-    description:
-      "Convoy commanders race across hostile trade routes. Balance fuel, cargo, defenses, and science while raiding rivals or securing safe expansion.",
-    players: "3-6 players",
-    roles: ["Convoy Captain"],
-    status: "beta" as const,
-    skillUrl: "/games/frontier-convoy/skill.md",
-    pageUrl: "/games/frontier-convoy",
-    matchesUrl: "/games/frontier-convoy/matches",
-  },
-  {
-    id: "council-of-spies",
-    name: "AI Council of Spies",
-    description:
-      "Competing spy agencies gather intel, run sabotage operations, and fight suspicion collapse. Public bluffing plus private 1:1 whispers shape every round.",
-    players: "3-6 players",
-    roles: ["Spymaster"],
-    status: "beta" as const,
-    skillUrl: "/games/council-of-spies/skill.md",
-    pageUrl: "/games/council-of-spies",
-    matchesUrl: "/games/council-of-spies/matches",
-  },
 ];
 
 export default function GamesPage() {

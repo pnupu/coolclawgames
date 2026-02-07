@@ -186,7 +186,7 @@ async function main() {
     { agentId: "t1", agentName: "Xavier" },
     { agentId: "t2", agentName: "Opal" },
   ];
-  let ttt = createMatchForGame("tic-tac-toe", "ttt-test-1", tPlayers);
+  let ttt = createMatchForGame("tic-tac-toe", "ttt-test-1", tPlayers, { best_of: 1 });
   const tView1 = getPlayerViewForMatch(ttt, "t1");
   assert(tView1.your_turn, "X player starts first");
   assert(tView1.available_actions.includes("speak"), "X can speak before moving");
@@ -236,7 +236,9 @@ async function main() {
   assert(ttt.status === "finished", "tic-tac-toe finishes on win line");
   assert(ttt.winner?.team === "X", "X wins with A1-A2-A3");
 
-  const timeoutState = createMatchForGame("tic-tac-toe", "ttt-timeout", tPlayers);
+  const timeoutState = createMatchForGame("tic-tac-toe", "ttt-timeout", tPlayers, {
+    best_of: 1,
+  });
   const timeoutMoved = handleTimeoutForMatch(timeoutState, "t1");
   assert(
     timeoutMoved.events.some((e) => e.type === "player_ability"),
@@ -275,6 +277,27 @@ async function main() {
   assert(rps.round === 2, "round advances after both throws");
   const scoreMessage = rps.events[rps.events.length - 1]?.message ?? "";
   assert(scoreMessage.includes("Score:"), "scoreboard message emitted");
+  const rpsAfterRoundSpec = getSpectatorViewForMatch(rps, true);
+  const rpsGameData = rpsAfterRoundSpec.game_data as
+    | {
+        target_wins?: number;
+        scores_by_name?: Record<string, number>;
+        round_history?: Array<Record<string, unknown>>;
+      }
+    | undefined;
+  assert(
+    typeof rpsGameData?.target_wins === "number" && rpsGameData.target_wins === 4,
+    "rps spectator game_data includes target wins"
+  );
+  assert(
+    Boolean(rpsGameData?.scores_by_name?.Rocky === 1),
+    "rps spectator game_data includes player scores"
+  );
+  assert(
+    Array.isArray(rpsGameData?.round_history) &&
+      (rpsGameData?.round_history.length ?? 0) >= 1,
+    "rps spectator game_data includes round history"
+  );
 
   for (let i = 0; i < 3 && rps.status === "in_progress"; i++) {
     rps = processActionForMatch(rps, "r1", { action: "use_ability", target: "rock" });
@@ -319,6 +342,28 @@ async function main() {
     ),
     "battleship speak is visible to spectators"
   );
+  const battleshipGameData = battleshipSpec.game_data as
+    | {
+        grid_size?: number;
+        players?: Array<{
+          fleet_board?: string[];
+          targeting_board?: string[];
+        }>;
+      }
+    | undefined;
+  assert(battleshipGameData?.grid_size === 4, "battleship spectator game_data has grid size");
+  assert(
+    (battleshipGameData?.players?.length ?? 0) === 2,
+    "battleship spectator game_data includes both players"
+  );
+  assert(
+    (battleshipGameData?.players?.[0]?.fleet_board?.length ?? 0) === 16,
+    "battleship spectator game_data includes fleet board cells"
+  );
+  assert(
+    (battleshipGameData?.players?.[0]?.targeting_board?.length ?? 0) === 16,
+    "battleship spectator game_data includes targeting board cells"
+  );
 
   const initialShips = ((battleship.phaseData as {
     shipCellsByPlayer: Record<string, number[]>;
@@ -358,6 +403,11 @@ async function main() {
       (e) => e.type === "player_ability" && e.message.includes("HIT")
     ),
     "battleship hit events are emitted"
+  );
+  const finishedBattleshipSpec = getSpectatorViewForMatch(battleship, true);
+  assert(
+    Array.isArray((finishedBattleshipSpec.game_data as { players?: unknown[] } | undefined)?.players),
+    "battleship spectator game_data persists after finish"
   );
 
   // ── 5. Kingdom Operator ───────────────────────────

@@ -25,6 +25,13 @@ interface RpsPhaseData {
   targetWins: number;
   currentThrows: Record<string, Move>;
   scores: Record<string, number>;
+  roundHistory: RpsRoundResult[];
+}
+
+interface RpsRoundResult {
+  round: number;
+  throws: Record<string, Move>;
+  winner: string | null;
 }
 
 const RPS_DEFINITION: GameTypeDefinition = {
@@ -116,6 +123,7 @@ export const RockPaperScissorsGame: GameImplementation = {
         targetWins: TARGET_WINS,
         currentThrows: {},
         scores,
+        roundHistory: [],
       },
       turnStartedAt: now,
       createdAt: now,
@@ -172,6 +180,7 @@ export const RockPaperScissorsGame: GameImplementation = {
   },
 
   getSpectatorView(state): SpectatorView {
+    const phaseData = getPhaseData(state);
     const players: SpectatorPlayerInfo[] = state.players.map((p) => ({
       agent_id: p.agentId,
       agent_name: p.agentName,
@@ -198,6 +207,39 @@ export const RockPaperScissorsGame: GameImplementation = {
       };
     });
 
+    const scoresByName: Record<string, number> = {};
+    const lockedByName: Record<string, boolean> = {};
+    for (const player of state.players) {
+      scoresByName[player.agentName] = phaseData.scores[player.agentId] ?? 0;
+      lockedByName[player.agentName] = Boolean(
+        phaseData.currentThrows[player.agentId]
+      );
+    }
+
+    const roundHistory = phaseData.roundHistory.map((entry) => {
+      const throwByName: Record<string, Move | null> = {};
+      for (const player of state.players) {
+        throwByName[player.agentName] = entry.throws[player.agentId] ?? null;
+      }
+      const winnerPlayer = entry.winner
+        ? state.players.find((p) => p.agentId === entry.winner)
+        : null;
+      return {
+        round: entry.round,
+        throws_by_player: throwByName,
+        winner_name: winnerPlayer?.agentName ?? null,
+      };
+    });
+
+    const gameData: Record<string, unknown> = {
+      target_wins: phaseData.targetWins,
+      best_of: phaseData.targetWins * 2 - 1,
+      scores_by_name: scoresByName,
+      rounds_played: phaseData.roundHistory.length,
+      locked_by_name: lockedByName,
+      round_history: roundHistory,
+    };
+
     return {
       match_id: state.matchId,
       game_type: state.gameType,
@@ -211,6 +253,7 @@ export const RockPaperScissorsGame: GameImplementation = {
         ? { team: state.winner.team, reason: state.winner.reason }
         : undefined,
       created_at: state.createdAt,
+      game_data: gameData,
     };
   },
 
@@ -348,6 +391,8 @@ function getPhaseData(state: GameState): RpsPhaseData {
     targetWins: (state.phaseData.targetWins as number) ?? TARGET_WINS,
     currentThrows: (state.phaseData.currentThrows as Record<string, Move>) ?? {},
     scores: (state.phaseData.scores as Record<string, number>) ?? {},
+    roundHistory:
+      (state.phaseData.roundHistory as RpsRoundResult[] | undefined) ?? [],
   };
 }
 
@@ -360,13 +405,16 @@ function resolveRound(state: GameState): GameState {
 
   const outcome = compareThrows(throwA, throwB);
   const newScores = { ...phaseData.scores };
+  let winnerAgentId: string | null = null;
   let roundMessage = `Round ${state.round}: ${state.players.find((p) => p.agentId === p1)?.agentName} threw ${throwA}, ${state.players.find((p) => p.agentId === p2)?.agentName} threw ${throwB}.`;
 
   if (outcome === 1) {
     newScores[p1] = (newScores[p1] ?? 0) + 1;
+    winnerAgentId = p1;
     roundMessage += ` ${state.players.find((p) => p.agentId === p1)?.agentName} wins the round.`;
   } else if (outcome === -1) {
     newScores[p2] = (newScores[p2] ?? 0) + 1;
+    winnerAgentId = p2;
     roundMessage += ` ${state.players.find((p) => p.agentId === p2)?.agentName} wins the round.`;
   } else {
     roundMessage += " It's a tie.";
@@ -403,6 +451,14 @@ function resolveRound(state: GameState): GameState {
       ...state.phaseData,
       currentThrows: {},
       scores: newScores,
+      roundHistory: [
+        ...phaseData.roundHistory,
+        {
+          round: state.round,
+          throws: { ...phaseData.currentThrows },
+          winner: winnerAgentId,
+        },
+      ],
     },
     round: state.round + 1,
     turnStartedAt: Date.now(),

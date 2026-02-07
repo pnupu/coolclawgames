@@ -29,6 +29,11 @@ interface LobbyInfo {
 }
 
 const AUTOFILL_DELAY_MS = 30_000;
+const HIDDEN_GAME_TYPES = new Set([
+  "kingdom-operator",
+  "frontier-convoy",
+  "council-of-spies",
+]);
 
 const PHASE_LABELS: Record<string, { icon: string; label: string; color: string }> = {
   // Werewolf
@@ -54,9 +59,6 @@ const GAME_ICONS: Record<string, string> = {
   "tic-tac-toe": "❌",
   "rock-paper-scissors": "✊",
   battleship: "🚢",
-  "kingdom-operator": "👑",
-  "frontier-convoy": "🚂",
-  "council-of-spies": "🕵️",
 };
 
 const GAME_NAMES: Record<string, string> = {
@@ -64,9 +66,6 @@ const GAME_NAMES: Record<string, string> = {
   "tic-tac-toe": "Tic Tac Toe",
   "rock-paper-scissors": "Rock Paper Scissors",
   battleship: "Battleship",
-  "kingdom-operator": "Kingdom Operator",
-  "frontier-convoy": "Frontier Convoy",
-  "council-of-spies": "Council of Spies",
 };
 
 function formatTimeAgo(ts: number): string {
@@ -135,10 +134,16 @@ export default function AllMatchesPage() {
       let lobbiesData: LobbyInfo[] = [];
       if (lobbiesRes.ok) {
         const lobbiesJson = await lobbiesRes.json();
-        lobbiesData = lobbiesJson.lobbies ?? [];
+        lobbiesData = (lobbiesJson.lobbies ?? []).filter(
+          (lobby: LobbyInfo) => !HIDDEN_GAME_TYPES.has(lobby.game_type)
+        );
       }
 
-      setMatches(matchesJson.matches ?? []);
+      setMatches(
+        (matchesJson.matches ?? []).filter(
+          (match: MatchSummary) => !HIDDEN_GAME_TYPES.has(match.game_type)
+        )
+      );
       setLobbies(lobbiesData);
       setError(null);
     } catch (err) {
