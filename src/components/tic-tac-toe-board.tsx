@@ -125,21 +125,20 @@ function BoardGrid({
 
 export function TicTacToeBoard({ spectatorView }: TicTacToeBoardProps) {
   const gameData = spectatorView.game_data;
-  if (!gameData) return null;
 
-  const currentBoard = (gameData.board as Array<string | null>) ?? Array(9).fill(null);
-  const currentWinLine = (gameData.win_line as number[] | null) ?? null;
-  const seriesScore = (gameData.series_score as Record<string, number>) ?? { X: 0, O: 0 };
-  const bestOf = (gameData.best_of as number) ?? 1;
-  const gamesPlayed = (gameData.games_played as number) ?? 0;
-  const marksByPlayer = (gameData.marks_by_player as Record<string, string>) ?? {};
-  const gameHistory = (gameData.game_history as HistoryGame[]) ?? [];
+  const currentBoard = (gameData?.board as Array<string | null>) ?? Array(9).fill(null);
+  const currentWinLine = (gameData?.win_line as number[] | null) ?? null;
+  const seriesScore = (gameData?.series_score as Record<string, number>) ?? { X: 0, O: 0 };
+  const bestOf = (gameData?.best_of as number) ?? 1;
+  const gamesPlayed = (gameData?.games_played as number) ?? 0;
+  const marksByPlayer = (gameData?.marks_by_player as Record<string, string>) ?? {};
+  const gameHistory = (gameData?.game_history as HistoryGame[]) ?? [];
 
   const isFinished = spectatorView.status === "finished";
 
   // Total games: completed history + current game (if in progress or just finished this game)
   const totalGames = isFinished ? gameHistory.length : gameHistory.length + 1;
-  const currentGameIndex = totalGames - 1;
+  const currentGameIndex = Math.max(0, totalGames - 1);
 
   // Selected game tab -- default to the latest game
   const [selectedGame, setSelectedGame] = useState(currentGameIndex);
@@ -157,11 +156,11 @@ export function TicTacToeBoard({ spectatorView }: TicTacToeBoardProps) {
   let displayWinLine: number[] | null;
   let gameLabel: string;
 
-  if (isViewingHistoryGame) {
+  if (isViewingHistoryGame && gameHistory[selectedGame]) {
     // Viewing a completed game from history
     const histGame = gameHistory[selectedGame];
-    displayBoard = histGame.board;
-    displayWinLine = histGame.win_line;
+    displayBoard = histGame.board ?? Array(9).fill(null);
+    displayWinLine = histGame.win_line ?? null;
     const winner = histGame.winner;
     gameLabel = winner === "draw" ? "Draw" : `${winner} won`;
   } else {
@@ -194,6 +193,9 @@ export function TicTacToeBoard({ spectatorView }: TicTacToeBoardProps) {
     const col = parseInt(cell[1]) - 1;
     return row * 3 + col;
   }, [spectatorView.events, isViewingCurrentGame, isViewingHistoryGame, isFinished]);
+
+  // Guard: if no game data, render nothing (all hooks called above)
+  if (!gameData) return null;
 
   return (
     <div className="flex flex-col items-center gap-3 py-4 px-2">
