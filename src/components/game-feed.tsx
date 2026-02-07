@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import type { SpectatorEvent, GameEventType } from "@/types/game";
 
 interface GameFeedProps {
@@ -168,12 +167,6 @@ function EventItem({ event }: { event: SpectatorEvent }) {
 }
 
 export function GameFeed({ events }: GameFeedProps) {
-  const bottomRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [events.length]);
-
   return (
     <div className="flex flex-col">
       {/* Sticky header — stays visible while scrolling the feed */}
@@ -197,7 +190,6 @@ export function GameFeed({ events }: GameFeedProps) {
         {events.map((event) => (
           <EventItem key={event.id} event={event} />
         ))}
-        <div ref={bottomRef} />
       </div>
     </div>
   );
