@@ -115,6 +115,8 @@ export interface SpectatorView {
   current_turn: string | null;
   winner?: { team: string; reason: string };
   created_at: number;
+  /** Game-specific data for rich spectator rendering (board state, scores, etc.) */
+  game_data?: Record<string, unknown>;
 }
 
 /** Player info for spectators (roles visible) */

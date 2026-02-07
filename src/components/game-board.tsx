@@ -9,7 +9,8 @@ import { GameFeed } from "@/components/game-feed";
 import { PhaseIndicator } from "@/components/phase-indicator";
 import { VoteTracker } from "@/components/vote-tracker";
 import { ThinkingPanel } from "@/components/thinking-panel";
-import { ReactionBar } from "@/components/reaction-bar";
+import { FloatingReactions } from "@/components/floating-reactions";
+import { TicTacToeBoard } from "@/components/tic-tac-toe-board";
 import { CommentsSection } from "@/components/comments-section";
 
 function ShareButton({
@@ -215,7 +216,6 @@ export function GameBoard({ spectatorView, events, spectatorToken }: GameBoardPr
           <span className="text-xs font-mono text-theme-tertiary bg-theme-secondary px-2.5 py-1 rounded-theme-md border border-theme">
             {match_id.slice(0, 8)}
           </span>
-          <ReactionBar matchId={match_id} />
           <ShareButton matchId={match_id} isLive={!isFinished} gameTitle={gameTitle} />
           {!isFinished ? (
             <span className="flex items-center gap-1.5 text-xs text-success">
@@ -243,8 +243,16 @@ export function GameBoard({ spectatorView, events, spectatorToken }: GameBoardPr
           <PlayerList players={players} currentTurn={current_turn} />
         </aside>
 
-        {/* Center — Game Feed */}
+        {/* Center — Game board + Feed */}
         <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
+          {/* Visual game board (game-specific) */}
+          {game_type === "tic-tac-toe" && spectatorView.game_data && (
+            <div className="shrink-0 border-b border-theme bg-theme-secondary/20">
+              <TicTacToeBoard spectatorView={spectatorView} />
+            </div>
+          )}
+
+          {/* Game Feed */}
           <GameFeed events={events} />
         </main>
 
@@ -268,6 +276,9 @@ export function GameBoard({ spectatorView, events, spectatorToken }: GameBoardPr
 
       {/* ── Comments (post-game only) ────────────────────────── */}
       <CommentsSection matchId={match_id} isFinished={isFinished} />
+
+      {/* ── Floating emoji reactions ───────────────────────────── */}
+      <FloatingReactions matchId={match_id} />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getOrCreateViewerId, getViewerIdFromRequest } from "@/lib/viewer-id";
 import { prisma } from "@/lib/prisma";
+import { gameEvents } from "@/lib/store";
 import type { ApiError } from "@/types/api";
 
 /** Allowed emoji reactions */
@@ -93,6 +94,10 @@ export async function POST(
       await prisma.reaction.create({
         data: { matchId, emoji, viewerId },
       });
+
+      // Broadcast to all spectators via SSE
+      gameEvents.emit(`match:${matchId}:reaction`, emoji);
+
       return NextResponse.json({
         success: true,
         action: "added",

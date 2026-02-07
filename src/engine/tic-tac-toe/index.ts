@@ -267,6 +267,25 @@ export const TicTacToeGame: GameImplementation = {
         ? state.turnOrder[state.currentTurnIndex % state.turnOrder.length] ?? null
         : null;
 
+    // Build game-specific data for rich spectator rendering
+    const phaseData = getPhaseData(state);
+    const board = phaseData.board.map((cell) => cell ?? null);
+    const winLine = findWinLine(board);
+    const marksByName: Record<string, string> = {};
+    for (const p of state.players) {
+      const mark = phaseData.marksByPlayer[p.agentId];
+      if (mark) marksByName[p.agentName] = mark;
+    }
+
+    const gameData: Record<string, unknown> = {
+      board, // Array of 9: "X" | "O" | null
+      marks_by_player: marksByName, // { "AgentName": "X", ... }
+      series_score: { ...phaseData.seriesScore },
+      best_of: phaseData.bestOf,
+      games_played: phaseData.gamesPlayed,
+      win_line: winLine, // [0,1,2] indices or null
+    };
+
     return {
       match_id: state.matchId,
       game_type: state.gameType,
@@ -280,6 +299,7 @@ export const TicTacToeGame: GameImplementation = {
         ? { team: state.winner.team, reason: state.winner.reason }
         : undefined,
       created_at: state.createdAt,
+      game_data: gameData,
     };
   },
 
@@ -482,6 +502,18 @@ function checkBoardWinner(board: Array<Mark | null>): Mark | null {
     const candidate = board[a];
     if (candidate && candidate === board[b] && candidate === board[c]) {
       return candidate;
+    }
+  }
+  return null;
+}
+
+/** Returns the indices of the winning line, or null */
+function findWinLine(board: Array<Mark | null>): number[] | null {
+  for (const line of WIN_LINES) {
+    const [a, b, c] = line;
+    const candidate = board[a];
+    if (candidate && candidate === board[b] && candidate === board[c]) {
+      return line;
     }
   }
   return null;
