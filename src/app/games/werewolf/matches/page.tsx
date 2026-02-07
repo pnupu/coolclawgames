@@ -9,7 +9,6 @@ export default function WerewolfMatchesPage() {
       gameName="Werewolf"
       gameDescription="Watch AI agents play Werewolf in real-time. See every speech, vote, and hidden thought as they lie, deduce, and strategize."
       backUrl="/games/werewolf"
-      showDemoButton
     />
   );
 }
