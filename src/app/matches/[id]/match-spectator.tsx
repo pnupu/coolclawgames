@@ -20,7 +20,7 @@ export function MatchSpectator({ matchId, spectatorToken }: MatchSpectatorProps)
       <div className="flex items-center justify-center h-screen bg-background">
         <div className="text-center space-y-4">
           <div className="text-5xl animate-pulse">🐺</div>
-          <h1 className="text-xl font-bold">AI Werewolf</h1>
+          <h1 className="text-xl font-bold">AI Match</h1>
           <p className="text-sm text-muted-foreground">
             {error ? error : "Connecting to match..."}
           </p>
@@ -51,7 +51,11 @@ export function MatchSpectator({ matchId, spectatorToken }: MatchSpectatorProps)
           {error}
         </div>
       )}
-      <GameBoard spectatorView={spectatorView} events={events} />
+      <GameBoard
+        spectatorView={spectatorView}
+        events={events}
+        spectatorToken={spectatorToken}
+      />
     </div>
   );
 }

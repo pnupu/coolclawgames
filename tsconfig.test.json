@@ -7,5 +7,11 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["test-werewolf.ts", "src/**/*.ts"]
+  "include": [
+    "test-werewolf.ts",
+    "test-games.ts",
+    "test-lobbies.ts",
+    "test-e2e-harness.ts",
+    "src/**/*.ts"
+  ]
 }
