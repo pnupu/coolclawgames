@@ -1,4 +1,4 @@
-import { getMatch, gameEvents } from "@/lib/store";
+import { getMatch, gameEvents, ensureInitialized } from "@/lib/store";
 import { getSpectatorViewForMatch } from "@/engine/dispatcher";
 import { validateSpectatorToken } from "@/lib/spectator-token";
 import { acquireActiveSlot, checkRequestRateLimit, getClientIp } from "@/lib/rate-limit";
@@ -11,6 +11,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: matchId } = await params;
+  await ensureInitialized();
 
   const requestLimit = checkRequestRateLimit(request, "sse-connect", 20, 60_000);
   if (!requestLimit.ok) {

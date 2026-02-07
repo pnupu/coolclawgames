@@ -4,6 +4,7 @@ import {
   getAllLobbies,
   checkLobbyCooldown,
   getLobbyByInviteCode,
+  ensureInitialized,
 } from "@/lib/store";
 import { authenticateAgent, isAuthError } from "@/lib/auth";
 import { hasGameType, getGameTypeDefinition } from "@/engine/registry";
@@ -20,6 +21,7 @@ import "@/lib/turn-timeout";
 import "@/lib/private-lobby-cleanup";
 
 export async function GET() {
+  await ensureInitialized();
   const lobbies = getAllLobbies().filter(
     (l) => l.status === "waiting" && !l.is_private
   );
@@ -33,7 +35,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const authResult = authenticateAgent(request);
+  const authResult = await authenticateAgent(request);
   if (isAuthError(authResult)) {
     return NextResponse.json(
       {

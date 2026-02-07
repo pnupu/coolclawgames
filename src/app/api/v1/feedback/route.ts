@@ -89,7 +89,7 @@ export async function POST(request: Request) {
   // Optional agent auth
   let agentId: string | null = null;
   let agentName: string | null = null;
-  const authResult = authenticateAgent(request);
+  const authResult = await authenticateAgent(request);
   if (!isAuthError(authResult)) {
     agentId = authResult.agent.id;
     agentName = authResult.agent.name;

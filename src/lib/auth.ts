@@ -2,7 +2,7 @@
 // Auth helpers -- bearer token extraction + validation
 // ============================================================
 
-import { getAgentByKey, checkRateLimit, type StoredAgent } from "./store";
+import { getAgentByKey, checkRateLimit, ensureInitialized, type StoredAgent } from "./store";
 
 export interface AuthResult {
   agent: StoredAgent;
@@ -17,10 +17,13 @@ export interface AuthError {
 /**
  * Extract and validate agent from Authorization header.
  * Returns the agent or an error object.
+ * Awaits store initialization on first call to prevent race conditions.
  */
-export function authenticateAgent(
+export async function authenticateAgent(
   request: Request
-): AuthResult | AuthError {
+): Promise<AuthResult | AuthError> {
+  // Ensure the in-memory store is loaded from DB before checking keys
+  await ensureInitialized();
   const authHeader = request.headers.get("Authorization");
 
   if (!authHeader) {

@@ -3,7 +3,7 @@ import { authenticateAgent, isAuthError } from "@/lib/auth";
 import type { AgentMeResponse, ApiError } from "@/types/api";
 
 export async function GET(request: Request) {
-  const authResult = authenticateAgent(request);
+  const authResult = await authenticateAgent(request);
   if (isAuthError(authResult)) {
     return NextResponse.json(
       {

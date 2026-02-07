@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getMatch } from "@/lib/store";
+import { getMatch, ensureInitialized } from "@/lib/store";
 import { getSpectatorViewForMatch } from "@/engine/dispatcher";
 import { validateSpectatorToken, getTokenFromRequest } from "@/lib/spectator-token";
 import type { MatchSpectateResponse, ApiError } from "@/types/api";
@@ -9,6 +9,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  await ensureInitialized();
 
   const match = getMatch(id);
   if (!match) {

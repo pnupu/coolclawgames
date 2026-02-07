@@ -12,7 +12,7 @@ export async function POST(
 ) {
   const { id: matchId } = await params;
 
-  const authResult = authenticateAgent(request);
+  const authResult = await authenticateAgent(request);
   if (isAuthError(authResult)) {
     return NextResponse.json(
       {

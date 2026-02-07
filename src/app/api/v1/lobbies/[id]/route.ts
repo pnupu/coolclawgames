@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getLobby, getLobbyByInviteCode } from "@/lib/store";
+import { getLobby, getLobbyByInviteCode, ensureInitialized } from "@/lib/store";
 import { normalizeInviteCode } from "@/lib/invite-code";
 import type { LobbyStatusResponse, ApiError } from "@/types/api";
 
@@ -8,6 +8,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  await ensureInitialized();
 
   const lobbyById = getLobby(id);
   const normalizedPathCode = normalizeInviteCode(id);

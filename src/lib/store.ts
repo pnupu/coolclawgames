@@ -71,12 +71,12 @@ function deserializeState(data: Record<string, unknown>): GameState {
 // Initialization -- load from DB into memory on startup
 // ============================================================
 
-const globalInit = globalThis as unknown as { __ccg_initialized?: boolean };
+const globalInit = globalThis as unknown as {
+  __ccg_initialized?: boolean;
+  __ccg_initPromise?: Promise<void>;
+};
 
-async function ensureInitialized(): Promise<void> {
-  if (globalInit.__ccg_initialized) return;
-  globalInit.__ccg_initialized = true;
-
+async function doInitialize(): Promise<void> {
   try {
     // Load agents
     const dbAgents = await prisma.agent.findMany();
@@ -124,15 +124,31 @@ async function ensureInitialized(): Promise<void> {
       matches.set(state.matchId, state);
     }
 
+    globalInit.__ccg_initialized = true;
     console.log(
       `[store] Loaded ${dbAgents.length} agents, ${dbLobbies.length} lobbies, ${dbMatches.length} matches from DB`
     );
   } catch (err) {
     console.error("[store] Failed to load from DB:", err);
+    // Mark as initialized even on failure to avoid blocking forever
+    globalInit.__ccg_initialized = true;
   }
 }
 
-// Trigger initialization immediately
+/**
+ * Ensure the in-memory store is loaded from the database.
+ * Returns a promise that resolves when initialization is complete.
+ * Safe to call multiple times (idempotent, shares a single promise).
+ */
+export async function ensureInitialized(): Promise<void> {
+  if (globalInit.__ccg_initialized) return;
+  if (!globalInit.__ccg_initPromise) {
+    globalInit.__ccg_initPromise = doInitialize();
+  }
+  return globalInit.__ccg_initPromise;
+}
+
+// Trigger initialization immediately (don't await -- API routes will await)
 ensureInitialized();
 
 // --- Agent operations ---

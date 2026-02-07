@@ -10,7 +10,7 @@ export async function GET(
 ) {
   const { id } = await params;
 
-  const authResult = authenticateAgent(request);
+  const authResult = await authenticateAgent(request);
   if (isAuthError(authResult)) {
     return NextResponse.json(
       {

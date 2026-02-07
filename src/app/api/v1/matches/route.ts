@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { getAllMatches } from "@/lib/store";
+import { getAllMatches, ensureInitialized } from "@/lib/store";
 import type { MatchesListResponse, MatchSummary } from "@/types/api";
 
 export async function GET() {
+  await ensureInitialized();
   const matches = getAllMatches();
 
   const summaries: MatchSummary[] = matches.map((m) => ({

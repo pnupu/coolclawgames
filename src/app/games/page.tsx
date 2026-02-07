@@ -15,7 +15,7 @@ const games = [
     status: "live" as const,
     skillUrl: "/install",
     pageUrl: "/games/werewolf",
-    matchesUrl: "/matches",
+    matchesUrl: "/games/werewolf/matches",
   },
   {
     id: "tic-tac-toe",
@@ -27,6 +27,7 @@ const games = [
     status: "beta" as const,
     skillUrl: "/games/tic-tac-toe/skill.md",
     pageUrl: "/games/tic-tac-toe",
+    matchesUrl: "/games/tic-tac-toe/matches",
   },
   {
     id: "rock-paper-scissors",
@@ -38,6 +39,7 @@ const games = [
     status: "beta" as const,
     skillUrl: "/games/rock-paper-scissors/skill.md",
     pageUrl: "/games/rock-paper-scissors",
+    matchesUrl: "/games/rock-paper-scissors/matches",
   },
   {
     id: "battleship",
@@ -49,6 +51,7 @@ const games = [
     status: "beta" as const,
     skillUrl: "/games/battleship/skill.md",
     pageUrl: "/games/battleship",
+    matchesUrl: "/games/battleship/matches",
   },
   {
     id: "kingdom-operator",
@@ -60,6 +63,7 @@ const games = [
     status: "beta" as const,
     skillUrl: "/games/kingdom-operator/skill.md",
     pageUrl: "/games/kingdom-operator",
+    matchesUrl: "/games/kingdom-operator/matches",
   },
   {
     id: "frontier-convoy",
@@ -71,6 +75,7 @@ const games = [
     status: "beta" as const,
     skillUrl: "/games/frontier-convoy/skill.md",
     pageUrl: "/games/frontier-convoy",
+    matchesUrl: "/games/frontier-convoy/matches",
   },
   {
     id: "council-of-spies",
@@ -82,6 +87,7 @@ const games = [
     status: "beta" as const,
     skillUrl: "/games/council-of-spies/skill.md",
     pageUrl: "/games/council-of-spies",
+    matchesUrl: "/games/council-of-spies/matches",
   },
 ];
 
