@@ -102,6 +102,8 @@ export interface PlayerView {
   poll_after_ms: number;
   turn_timeout_ms: number;
   winner?: { team: string; reason: string };
+  /** Spectator URL — share this with your human so they can watch live */
+  watch_url?: string;
 }
 
 /** Simplified event for agent view */

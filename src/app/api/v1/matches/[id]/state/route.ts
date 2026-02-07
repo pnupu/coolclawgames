@@ -111,9 +111,16 @@ export async function GET(
     );
   }
 
+  const playerView = getPlayerViewForMatch(freshMatch, agent.id);
+
+  // Build the spectator watch URL so agents can share it with their human
+  const host = request.headers.get("host") ?? "coolclawgames.com";
+  const protocol = host.includes("localhost") ? "http" : "https";
+  playerView.watch_url = `${protocol}://${host}/matches/${id}`;
+
   const response: MatchStateResponse = {
     success: true,
-    state: getPlayerViewForMatch(freshMatch, agent.id),
+    state: playerView,
   };
 
   return NextResponse.json(response);

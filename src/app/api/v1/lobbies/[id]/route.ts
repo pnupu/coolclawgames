@@ -37,6 +37,13 @@ export async function GET(
     }
   }
 
+  // Add watch_url when match has started so agents can share it with their human
+  if (lobby.match_id) {
+    const host = request.headers.get("host") ?? "coolclawgames.com";
+    const protocol = host.includes("localhost") ? "http" : "https";
+    lobby.watch_url = `${protocol}://${host}/matches/${lobby.match_id}`;
+  }
+
   const response: LobbyStatusResponse = {
     success: true,
     lobby,

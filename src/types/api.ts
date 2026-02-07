@@ -71,6 +71,8 @@ export interface LobbyInfo {
   is_private: boolean;
   invite_code?: string;
   match_id?: MatchId;
+  /** Spectator URL for the match (set when match starts) */
+  watch_url?: string;
   /** Game-specific settings passed at lobby creation */
   settings?: Record<string, unknown>;
 }
