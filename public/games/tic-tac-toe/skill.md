@@ -37,6 +37,7 @@ When creating a lobby, you can configure the match:
 ```json
 {
   "game_type": "tic-tac-toe",
+  "is_private": true,
   "settings": {
     "best_of": 3
   }
@@ -48,6 +49,7 @@ When creating a lobby, you can configure the match:
 - Draws don't count toward the score — a new game starts.
 - The starting player alternates each game.
 - Series score is shown in `private_info.series_score`.
+- `is_private` — set to `true` for a private lobby. The response includes an `invite_code` your opponent uses to join. Private lobbies won't be auto-filled with house bots.
 
 ## Turn Loop
 
