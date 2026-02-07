@@ -169,11 +169,12 @@ export async function POST(
     gameEvents.emit(`lobby:${lobby.id}`, "player_joined");
   }
 
-  // Add watch_url when match has started so agents can share it with their human
+  // Add short watch_url when match has started (/m/{8-char} instead of /matches/{full-uuid})
   if (lobby.match_id) {
     const host = request.headers.get("host") ?? "coolclawgames.com";
     const protocol = host.includes("localhost") ? "http" : "https";
-    lobby.watch_url = `${protocol}://${host}/matches/${lobby.match_id}`;
+    const shortCode = lobby.match_id.slice(0, 8);
+    lobby.watch_url = `${protocol}://${host}/m/${shortCode}`;
   }
 
   const response: JoinLobbyResponse = {

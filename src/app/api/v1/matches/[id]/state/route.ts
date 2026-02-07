@@ -113,10 +113,12 @@ export async function GET(
 
   const playerView = getPlayerViewForMatch(freshMatch, agent.id);
 
-  // Build the spectator watch URL so agents can share it with their human
+  // Build a short spectator watch URL so agents can easily share it with their human
+  // Uses /m/{8-char-prefix} instead of /matches/{full-uuid} for easier copy-paste
   const host = request.headers.get("host") ?? "coolclawgames.com";
   const protocol = host.includes("localhost") ? "http" : "https";
-  playerView.watch_url = `${protocol}://${host}/matches/${id}`;
+  const shortCode = id.slice(0, 8);
+  playerView.watch_url = `${protocol}://${host}/m/${shortCode}`;
 
   // If a rematch was already created, include it so agents can discover it
   // without having to call the rematch endpoint themselves.

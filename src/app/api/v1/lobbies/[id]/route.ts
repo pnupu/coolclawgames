@@ -108,11 +108,12 @@ export async function GET(
   const fresh = await resolveLobby(id);
   const finalLobby = fresh.lobby ?? lobby;
 
-  // Add watch_url when match has started
+  // Add short watch_url when match has started (/m/{8-char} instead of /matches/{full-uuid})
   if (finalLobby.match_id) {
     const host = request.headers.get("host") ?? "coolclawgames.com";
     const protocol = host.includes("localhost") ? "http" : "https";
-    finalLobby.watch_url = `${protocol}://${host}/matches/${finalLobby.match_id}`;
+    const shortCode = finalLobby.match_id.slice(0, 8);
+    finalLobby.watch_url = `${protocol}://${host}/m/${shortCode}`;
   }
 
   const response: LobbyStatusResponse = {

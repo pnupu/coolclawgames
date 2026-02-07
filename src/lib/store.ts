@@ -498,6 +498,31 @@ export async function getMatchFreshFromDb(id: MatchId): Promise<GameState | unde
   }
 }
 
+/**
+ * Find a match by ID prefix (short code).
+ * Checks memory first, then falls back to DB with a startsWith query.
+ * Returns the full match ID if found, undefined otherwise.
+ */
+export async function findMatchIdByPrefix(prefix: string): Promise<string | undefined> {
+  // Check memory first
+  for (const id of matches.keys()) {
+    if (id.startsWith(prefix)) return id;
+  }
+
+  // Fall back to DB
+  try {
+    const m = await prisma.match.findFirst({
+      where: { id: { startsWith: prefix } },
+      select: { id: true },
+      orderBy: { createdAt: "desc" },
+    });
+    return m?.id ?? undefined;
+  } catch (err) {
+    console.error("[store] Failed to find match by prefix:", err);
+    return undefined;
+  }
+}
+
 export function getAllMatches(): GameState[] {
   return Array.from(matches.values());
 }
